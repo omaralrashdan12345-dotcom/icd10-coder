@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "bun run build",
+  "installCommand": "bun install",
+  "devCommand": "bun run dev",
+  "regions": ["sin1"],
+  "headers": [
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/icon.svg",
+      "headers": [
+        { "key": "Content-Type", "value": "image/svg+xml" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
+      ]
+    }
+  ]
+}

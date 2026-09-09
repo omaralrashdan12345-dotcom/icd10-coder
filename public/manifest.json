@@ -1,0 +1,21 @@
+{
+  "name": "ICD-10-CM AI Coding Agent",
+  "short_name": "ICD-10 Coder",
+  "description": "Convert clinical text into ICD-10-CM codes ranked dynamically (Primary / Secondary / Tertiary) with RAG validation and 7th-character checks.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["medical", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

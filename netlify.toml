@@ -1,0 +1,14 @@
+[build]
+  command = "bun run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NEXTAUTH_SECRET = "replace-me-in-netlify-dashboard"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  # Increase function timeout for GLM API calls (which can take 10+ seconds)
+  max_duration = 60
