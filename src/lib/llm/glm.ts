@@ -12,6 +12,10 @@ import { SYSTEM_PROMPT, buildUserMessage } from "./shared-prompt";
  * exists yet.
  */
 function ensureZaiConfig(): void {
+  // On serverless platforms (Vercel/Netlify) the filesystem is read-only and
+  // there is no `.z-ai-config` — Z.ai config must come from env vars only.
+  if (process.env.VERCEL || process.env.NETLIFY) return;
+
   const candidates = [
     path.join(process.cwd(), ".z-ai-config"),
     path.join(process.env.HOME ?? "/tmp", ".z-ai-config"),
@@ -19,7 +23,7 @@ function ensureZaiConfig(): void {
   ];
   const exists = candidates.some((p) => {
     try {
-      return fs.existsSync(p);
+      return fs.existsSync(/* turbopackIgnore: true */ p);
     } catch {
       return false;
     }
@@ -39,11 +43,11 @@ function ensureZaiConfig(): void {
   if (process.env.ZAI_USER_ID) config.userId = process.env.ZAI_USER_ID;
 
   try {
-    fs.writeFileSync(candidates[0], JSON.stringify(config, null, 2), { mode: 0o600 });
+    fs.writeFileSync(/* turbopackIgnore: true */ candidates[0], JSON.stringify(config, null, 2), { mode: 0o600 });
   } catch {
     // If we can't write to project root (read-only FS), try /tmp
     try {
-      fs.writeFileSync("/tmp/.z-ai-config", JSON.stringify(config, null, 2), { mode: 0o600 });
+      fs.writeFileSync(/* turbopackIgnore: true */ "/tmp/.z-ai-config", JSON.stringify(config, null, 2), { mode: 0o600 });
     } catch {
       // give up silently — the SDK will throw a clearer error later
     }
@@ -60,6 +64,8 @@ ensureZaiConfig();
 export function isZaiConfigured(): boolean {
   const placeholder = (v?: string) => !v || v.includes("your-") || v.includes("replace-with") || v.trim().length < 8;
   if (process.env.ZAI_API_KEY && !placeholder(process.env.ZAI_API_KEY)) return true;
+  // On serverless platforms there is no config file — env vars are the only source.
+  if (process.env.VERCEL || process.env.NETLIFY) return false;
   try {
     const candidates = [
       path.join(process.cwd(), ".z-ai-config"),
@@ -67,8 +73,8 @@ export function isZaiConfigured(): boolean {
       "/etc/.z-ai-config",
     ];
     for (const p of candidates) {
-      if (!fs.existsSync(p)) continue;
-      const cfg = JSON.parse(fs.readFileSync(p, "utf8")) as Record<string, string>;
+      if (!fs.existsSync(/* turbopackIgnore: true */ p)) continue;
+      const cfg = JSON.parse(fs.readFileSync(/* turbopackIgnore: true */ p, "utf8")) as Record<string, string>;
       if (cfg.apiKey && !placeholder(cfg.apiKey)) return true;
     }
     return false;
