@@ -76,7 +76,11 @@ export function AppearanceMenu({ locale }: { locale: Locale }) {
   const [font, setFont] = useState<FontSizeId>("md");
   const [dark, setDark] = useState<DarkModeId>("system");
 
-  // Read current values from the DOM on mount (set by the boot script)
+  // Read current values from the DOM on mount (set by the boot script).
+  // Intentional post-hydration sync — the boot script applies theme/font
+  // pre-paint to avoid a flash; state catches up after mount (no hydration
+  // mismatch because the DOM, not the render output, is the source here).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const root = document.documentElement;
     const th = root.getAttribute("data-theme") as ThemeId | null;
@@ -91,6 +95,7 @@ export function AppearanceMenu({ locale }: { locale: Locale }) {
       /* ignore */
     }
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <DropdownMenu>

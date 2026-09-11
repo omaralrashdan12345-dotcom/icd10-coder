@@ -75,8 +75,13 @@ function acuityLabel(v: ICDCodeDetail["acuity"], locale: Locale): string {
 function seventhCharLabel(v: ICDCodeDetail["seventh_character"], locale: Locale): string {
   switch (v) {
     case "A": return t(locale, "char_a");
+    case "B": return t(locale, "char_b");
+    case "C": return t(locale, "char_c");
     case "D": return t(locale, "char_d");
     case "S": return t(locale, "char_s");
+    case "G": return t(locale, "char_g");
+    case "K": return t(locale, "char_k");
+    case "P": return t(locale, "char_p");
     case "not_required": return t(locale, "char_not_required");
     case "missing": return t(locale, "char_missing");
     default: return t(locale, "not_applicable");
@@ -85,7 +90,7 @@ function seventhCharLabel(v: ICDCodeDetail["seventh_character"], locale: Locale)
 
 function seventhCharBadgeClass(v: ICDCodeDetail["seventh_character"]): string {
   if (v === "missing") return "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300";
-  if (v === "A" || v === "D" || v === "S") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
+  if (v === "A" || v === "B" || v === "C" || v === "D" || v === "S" || v === "G" || v === "K" || v === "P") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300";
   return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
 }
 

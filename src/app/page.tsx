@@ -62,6 +62,10 @@ function useLocale(): [Locale, (l: Locale) => void, (k: TranslationKey) => strin
   const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
+    // Intentional post-hydration sync: the boot script applies the saved
+    // locale to the DOM pre-paint; state must catch up after mount to avoid
+    // an SSR/client hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocaleState(detectDefaultLocale());
   }, []);
 

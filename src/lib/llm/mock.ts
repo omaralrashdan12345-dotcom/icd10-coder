@@ -2,6 +2,11 @@ import type { ClinicalCodingResponse, ICDCodeDetail } from "@/lib/schemas/icd";
 import type { LLMProvider } from "./types";
 import { CHRONIC_CONDITION_MATCHERS } from "@/lib/icd/chronic-conditions";
 import { keywordPresentNotNegated } from "@/lib/icd/validation";
+import { extractHistoryFindings } from "@/lib/icd/history-conditions";
+import {
+  extractUnconfirmedDiagnoses,
+  stripUnconfirmedDiagnoses,
+} from "@/lib/icd/unconfirmed";
 
 /**
  * Smart offline ICD-10-CM coder (v0.3).
@@ -289,7 +294,7 @@ const MOCK_RULES: MockRule[] = [
   // FRACTURES
   // =========================================================================
   {
-    keywords: ["distal radius fracture", "wrist fracture", "colles fracture"],
+    keywords: ["distal radius fracture", "wrist fracture", "colles fracture", "fractured wrist"],
     code: "S52.50{SIDE}A",
     description: "Unspecified fracture of the lower end of the {SIDE_DESC} radius, initial encounter for closed fracture",
     level: "primary",
@@ -300,7 +305,7 @@ const MOCK_RULES: MockRule[] = [
     detect_laterality: true,
   },
   {
-    keywords: ["hip fracture", "femoral neck fracture", "broken hip"],
+    keywords: ["hip fracture", "femoral neck fracture", "broken hip", "fractured hip", "fracture of the femoral neck"],
     code: "S72.00{SIDE}A",
     description: "Fracture of unspecified part of neck of {SIDE_DESC} femur, initial encounter for closed fracture",
     level: "primary",
@@ -311,7 +316,7 @@ const MOCK_RULES: MockRule[] = [
     detect_laterality: true,
   },
   {
-    keywords: ["tibia fracture", "shinbone fracture", "tibial fracture"],
+    keywords: ["tibia fracture", "shinbone fracture", "tibial fracture", "fracture of the right tibia", "fracture of the left tibia", "fracture of right tibia", "fracture of left tibia", "fractured tibia", "broken tibia", "tibia fx"],
     code: "S82.20{SIDE}A",
     description: "Unspecified fracture of shaft of {SIDE_DESC} tibia, initial encounter for closed fracture",
     level: "primary",
@@ -322,7 +327,7 @@ const MOCK_RULES: MockRule[] = [
     detect_laterality: true,
   },
   {
-    keywords: ["clavicle fracture", "broken collarbone"],
+    keywords: ["clavicle fracture", "broken collarbone", "fractured clavicle"],
     code: "S42.01{SIDE}A",
     description: "Fracture of unspecified part of {SIDE_DESC} clavicle, initial encounter for closed fracture",
     level: "primary",
@@ -343,7 +348,7 @@ const MOCK_RULES: MockRule[] = [
     confidence: 0.72,
   },
   {
-    keywords: ["ankle fracture", "lateral malleolus fracture", "broken ankle"],
+    keywords: ["ankle fracture", "lateral malleolus fracture", "broken ankle", "fractured ankle"],
     code: "S82.6{SIDE}XA",
     description: "Fracture of lateral malleolus of {SIDE_DESC} ankle, initial encounter for closed fracture",
     level: "primary",
@@ -1348,7 +1353,17 @@ export const mockProvider: LLMProvider = {
   modelLabel: "Smart Offline Coder (built-in)",
   async generateCoding(clinicalNote, ragContext) {
     const note = clinicalNote;
-    const text = note.toLowerCase();
+
+    // --- Sprint 1 pre-processing ------------------------------------------------
+    // (E) Personal/family history: strip "history of stroke" style spans and
+    //     resolve Z-codes, so active disease rules never fire from them.
+    // (D) Unconfirmed outpatient language: "probable/suspected/rule out X"
+    //     must NOT be coded per Section IV.B — strip, keep the symptoms.
+    const historyRes = extractHistoryFindings(note);
+    const unconfirmedSpans = extractUnconfirmedDiagnoses(historyRes.stripped);
+    const matchText = stripUnconfirmedDiagnoses(historyRes.stripped);
+    const text = matchText.toLowerCase();
+
     const enc = detectEncounterType(text);
     const encChar = ENCOUNTER_CHAR[enc];
 
@@ -1367,8 +1382,22 @@ export const mockProvider: LLMProvider = {
       if (matched) hits.push(rule);
     }
 
-    // --- 2. Detect chronic conditions
-    const chronicHits = detectChronicConditions(text);
+    // --- 2. Detect chronic conditions (+ Sprint-1 history findings)
+    const chronicHits: ChronicHit[] = [
+      ...detectChronicConditions(text),
+      ...historyRes.findings.map((f) => ({
+        code: f.code,
+        description: f.description,
+        label_en: f.label_en,
+        label_ar: f.label_ar,
+        rationale: f.family
+          ? `Family history documented in the note ("${f.condition}"). Family-history codes (Z80/Z82/Z83) are reported as secondary diagnoses and must NOT activate the patient's own disease code.`
+          : `Historical condition documented in the note ("${f.condition}"). Per ICD-10-CM, resolved episodic conditions are reported with a personal-history code instead of the active disease code.`,
+        confidence: 0.9,
+        specificity: 7,
+        acuity: "chronic" as Acuity,
+      })),
+    ];
 
     const hasDiabetes = chronicHits.some((h) => h.code.startsWith("E10") || h.code.startsWith("E11"));
     const hasFootUlcerRule = hits.some(
@@ -1438,7 +1467,6 @@ export const mockProvider: LLMProvider = {
       scored.sort((a, b) => b.score - a.score);
       primaryDetail = buildCodeDetail(scored[0].rule, text, enc);
     } else if (chronicHits.length > 0) {
-      // Encounter is for the chronic condition itself (e.g. CKD follow-up)
       const top = chronicHits.reduce((a, b) => (b.specificity > a.specificity ? b : a));
       primaryDetail = {
         code: top.code,
@@ -1461,6 +1489,34 @@ export const mockProvider: LLMProvider = {
         seventh_character: "not_required",
       };
       primaryDetail = fallback;
+    }
+
+    // --- 4b. Open/closed fracture 7th character (Sprint 1, Idea B-lite) ---
+    // Guideline (AHIMA/CMS): a fracture NOT stated as open or closed defaults
+    // to CLOSED (A) — already our template default. When the note explicitly
+    // documents an open/compound fracture, the initial-encounter 7th char
+    // must be B (open, Gustilo I/II) or C (Gustilo III).
+    const OPEN_FRACTURE_RE = /\bopen\b|compound|gustilo/i;
+    const FRACTURE_PREFIX_RE = /^S(02|12|22|32|42|52|62|72|82|92)/;
+    if (
+      OPEN_FRACTURE_RE.test(text) &&
+      FRACTURE_PREFIX_RE.test(primaryDetail.code) &&
+      /A$/.test(primaryDetail.code)
+    ) {
+      const g3 = /gustilo\s*(type\s*)?iii\b|grade\s*3|severe\s+open/i.test(text);
+      const newChar = g3 ? "C" : "B";
+      primaryDetail = {
+        ...primaryDetail,
+        code: primaryDetail.code.slice(0, -1) + newChar,
+        seventh_character: newChar as ICDCodeDetail["seventh_character"],
+        description: primaryDetail.description.replace(
+          "initial encounter for closed fracture",
+          "initial encounter for open fracture"
+        ),
+        rationale:
+          primaryDetail.rationale +
+          ` Note documents an OPEN fracture — 7th character updated from A (closed) to ${newChar} (open${g3 ? ", Gustilo grade III" : ", Gustilo grade I/II"}).`,
+      };
     }
 
     // --- 5. Build secondary list
@@ -1548,6 +1604,11 @@ export const mockProvider: LLMProvider = {
 
     // --- 9. Entities
     const entities = [
+      ...unconfirmedSpans.map((u) => ({
+        entity: u.phrase,
+        type: "disease" as const,
+        value: "not_coded_outpatient_unconfirmed",
+      })),
       ...chronicHits.map((h) => ({
         entity: h.label_en,
         type: "chronic_condition" as const,
@@ -1576,7 +1637,9 @@ export const mockProvider: LLMProvider = {
         `Primary: ${primaryDetail.code}. ` +
         `Secondary: ${finalSecondary.length} co-existing condition(s) detected from the UHDDS chronic-condition library (${CHRONIC_CONDITION_MATCHERS.length} patterns). ` +
         `Supplemental: ${dedupedTertiary.length} external cause / supporting code(s). ` +
-        `Matched from a built-in library of ${MOCK_RULES.length} clinical patterns with negation-aware matching.`,
+        `Matched from a built-in library of ${MOCK_RULES.length} clinical patterns with negation-aware matching. ` +
+        `History codes applied: ${historyRes.findings.length}. ` +
+        `Unconfirmed outpatient language excluded: ${unconfirmedSpans.length > 0 ? unconfirmedSpans.map((u) => `"${u.phrase}"`).join("; ") : "none"}.`,
       entities_extracted: entities,
     };
 

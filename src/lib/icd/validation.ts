@@ -22,6 +22,7 @@ import type {
 } from "@/lib/schemas/icd";
 import { BUILTIN_ICD10, CODE_FIRST_RULES } from "./data";
 import { CHRONIC_CONDITION_MATCHERS } from "./chronic-conditions";
+import { extractUnconfirmedDiagnoses } from "./unconfirmed";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -55,15 +56,18 @@ const BUILTIN_REQUIRES_7TH: Set<string> = new Set(
  */
 function stem(code: string): string {
   // 7th character is the last char if the code is 7+ chars and the last
-  // char is A/D/S and the char before is the 6th (letter or digit).
+  // char is a valid 7th character (A/B/C/D/G/K/P/S).
   if (code.length >= 7) {
     const last = code[code.length - 1];
-    if (last === "A" || last === "D" || last === "S") {
+    if (/[ABCDGKPS]/.test(last)) {
       return code.slice(0, -1).replace(/\.?$/, "");
     }
   }
   return code;
 }
+
+/** Valid terminal 7th characters for S/T injury and V/W/X/Y external-cause codes. */
+const VALID_SEVENTH = /^[ABCDGKPS]$/;
 
 /**
  * Negation-aware detection of a keyword in a clinical note.
@@ -142,11 +146,11 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
     const requires7th = codeRequires7th(code.code);
     const seventh = code.seventh_character ?? "not_required";
     if (requires7th) {
-      if (seventh === "missing" || (seventh === "not_required" && !/[ADS]$/.test(code.code))) {
-        // The LLM should have appended A/D/S to the code string. If the code
-        // ends without A/D/S, raise an error.
-        const endsWithADS = /[ADS]$/.test(code.code);
-        if (!endsWithADS) {
+      if (seventh === "missing" || (seventh === "not_required" && !/[ABCDGKPS]$/.test(code.code))) {
+        // The LLM should have appended a 7th character to the code string. If
+        // the code ends without a valid 7th character, raise an error.
+        const endsWithValid7th = /[ABCDGKPS]$/.test(code.code);
+        if (!endsWithValid7th) {
           issues.push({
             level: "error",
             code: code.code,
@@ -283,10 +287,195 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
     }
   }
 
+  // 7. Unconfirmed outpatient language (Sprint 1, Idea D).
+  //    Section IV.B: probable / suspected / rule-out conditions are NOT coded
+  //    in outpatient settings — the coder excluded them; tell the user why.
+  if (clinicalNote) {
+    const unconfirmed = extractUnconfirmedDiagnoses(clinicalNote);
+    const unique = unconfirmed.filter(
+      (u, i, arr) => arr.findIndex((x) => x.phrase.toLowerCase() === u.phrase.toLowerCase()) === i
+    );
+    for (const u of unique.slice(0, 3)) {
+      issues.push({
+        level: "info",
+        rule: "UNCONFIRMED_OUTPATIENT",
+        message_en: `Unconfirmed diagnosis language detected ("${u.phrase}"). Per ICD-10-CM Official Guidelines Section IV.B (outpatient), probable/suspected/rule-out conditions are NOT coded as if established — the coder excluded it and any confirmed symptoms were coded instead.`,
+        message_ar: `تم اكتشاف تشخيص غير مؤكد ("${u.phrase}"). وفق القسم IV.B من الدليل الرسمي (العيادات الخارجية)، لا يُرمَّز التشخيص المحتمل/المشكوك فيه؛ استبعدته المرمِّزة وتم ترميز الأعراض المؤكدة بدلاً منه.`,
+        suggestion_en: `If the condition is later confirmed in the medical record, replace the symptom code with the confirmed diagnosis code.`,
+        suggestion_ar: `إذا تأكد التشخيص لاحقاً في السجل الطبي، استبدل رمز العَرَض برمز التشخيص المؤكد.`,
+      });
+    }
+  }
+
+  // 8. Specificity clues (Sprint 1, Idea A): documentation present in the
+  //    note but not reflected in the assigned codes.
+  issues.push(...specificityClueIssues(clinicalNote ?? "", codes));
+
+  // 9. Code format validity (Sprint 1, Idea I): placeholder X rules, invalid
+  //    characters, incomplete external-cause codes, invalid 7th chars,
+  //    3-char codes with known subdivided children.
+  issues.push(...formatIssues(codes));
+
   return issues;
 }
 
 function isExternalCause(code: string): boolean {
   const c = code.charAt(0).toUpperCase();
   return c === "V" || c === "W" || c === "X" || c === "Y";
+}
+
+const FRACTURE_PREFIX_RE = /^(?:S(?:02|12|22|32|42|52|62|72|82|92))/;
+
+/** Laterality-sensitive families where the character after the prefix is 9 = unspecified side. */
+const LATERAL_FAMILIES = [
+  "M17.1", "M16.1", "M25.51", "M25.52", "M25.53", "M25.54", "M25.55", "M25.56", "M25.57",
+  "M79.60", "M79.63", "M79.67", "G56.0", "M75.4", "M20.1",
+];
+
+function specificityClueIssues(note: string, codes: { code: ICDCodeDetail; level: string }[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const n = note ?? "";
+  if (!n) return issues;
+
+  const hasBilateral = /\bbilateral\b|both\s+(?:knees|hips|sides)/i.test(n);
+  const hasOpenFx = /\bopen\s+(?:fracture|fx\b)|compound\s+(?:fracture|fx\b)|gustilo/i.test(n);
+  const hasUncontrolled = /uncontrolled|poorly\s+controlled|hyperglycem|high\s+blood\s+sugar|elevated\s+glucose/i.test(n);
+  const hasSide = /\b(left|right)\b/i.test(n);
+
+  for (const { code, level } of codes) {
+    const c = code.code.toUpperCase();
+    // A.1 bilateral documented but unilateral/unspecified OA code assigned
+    if (hasBilateral && /^(?:M17\.9|M17\.1[12]|M16\.9|M16\.1[12])$/.test(c)) {
+      const target = c.startsWith("M17") ? "M17.0" : "M16.0";
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "SPECIFICITY_BILATERAL",
+        message_en: `The note documents a BILATERAL condition but ${c} (${level}) is a unilateral/unspecified code. Bilateral primary osteoarthritis of the knee/hip has its own code (${target}).`,
+        message_ar: `النص يوثّق إصابة ثنائية الجانب بينما الرمز ${c} (${level}) لجهة واحدة أو غير محدد. الخشونة الثنائية للركبة/الورك لها رمز خاص (${target}).`,
+        suggestion_en: `Replace ${c} with ${target} (bilateral primary osteoarthritis).`,
+        suggestion_ar: `استبدل ${c} بالرمز ${target} (خشونة أولية ثنائية الجانب).`,
+      });
+    }
+    // A.2 open fracture documented but closed 7th char (A) assigned
+    if (hasOpenFx && FRACTURE_PREFIX_RE.test(c) && /A$/.test(c)) {
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "SEVENTH_CHAR_OPEN_FRACTURE",
+        message_en: `The note documents an OPEN fracture but ${c} (${level}) ends with 7th character "A" (initial encounter for CLOSED fracture). Per ICD-10-CM, "A" is only for closed fractures.`,
+        message_ar: `النص يوثّق كسراً مفتوحاً بينما الرمز ${c} (${level}) ينتهي بالحرف السابع "A" (زيارة أولى لكسر مغلق). وفق ICD-10-CM حرف "A" للكسور المغلقة فقط.`,
+        suggestion_en: `Use "B" (open fracture, Gustilo grade I/II) or "C" (Gustilo grade III), e.g. ${c.slice(0, -1)}B.`,
+        suggestion_ar: `استخدم "B" (كسر مفتوح درجة I/II) أو "C" (درجة III)، مثال: ${c.slice(0, -1)}B.`,
+      });
+    }
+    // A.3 uncontrolled diabetes documented but uncomplicated code assigned
+    if (hasUncontrolled && /^(?:E11\.9|E10\.9)$/.test(c)) {
+      const target = c.startsWith("E11") ? "E11.65" : "E10.65";
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "SPECIFICITY_UNCONTROLLED_DM",
+        message_en: `The note documents uncontrolled/poorly-controlled diabetes but ${c} (${level}) is "without complications". Hyperglycemia is a documented complication.`,
+        message_ar: `النص يذكر سكري غير مضبوط بينما الرمز ${c} (${level}) يعني "بدون مضاعفات". فرط سكر الدم مضاعفة موثّقة.`,
+        suggestion_en: `Use ${target} (diabetes with hyperglycemia) instead of ${c}.`,
+        suggestion_ar: `استخدم ${target} (السكري مع فرط سكر الدم) بدلاً من ${c}.`,
+      });
+    }
+    // A.4 laterality documented but unspecified-side (9) code assigned
+    if (hasSide) {
+      for (const fam of LATERAL_FAMILIES) {
+        if (c.startsWith(fam) && c.length > fam.length && c.charAt(fam.length) === "9") {
+          issues.push({
+            level: "warning",
+            code: c,
+            rule: "SPECIFICITY_LATERALITY",
+            message_en: `The note documents a side (left/right) but ${c} (${level}) ends in "9" = unspecified side.`,
+            message_ar: `النص يحدد الجانب (أيسر/أيمن) بينما الرمز ${c} (${level}) ينتهي بـ "9" أي جانب غير محدد.`,
+            suggestion_en: `Prefer the right/left-specific code (character 1 = right, 2 = left) when the note supports it.`,
+            suggestion_ar: `يُفضّل استخدام الرمز المحدد للجانب (الرقم 1 = أيمن، 2 = أيسر) عندما يدعم النص ذلك.`,
+          });
+          break;
+        }
+      }
+    }
+  }
+  return issues;
+}
+
+function formatIssues(codes: { code: ICDCodeDetail; level: string }[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  for (const { code, level } of codes) {
+    const c = code.code.toUpperCase();
+
+    // I.1 invalid characters: ICD-10-CM never uses the letters I or O
+    const stem = c.length >= 7 && VALID_SEVENTH.test(c[c.length - 1]) ? c.slice(0, -1) : c;
+    if (/[IO]/.test(stem.replace(".", ""))) {
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "INVALID_CODE_CHARACTER",
+        message_en: `Code ${c} (${level}) contains the letter I or O. ICD-10-CM codes never use these letters (they are confused with the digits 1 and 0).`,
+        message_ar: `الرمز ${c} (${level}) يحتوي على الحرف I أو O. رموز ICD-10-CM لا تستخدم هذين الحرفين أبداً (للخلط بينهما والرقمين 1 و 0).`,
+        suggestion_en: `Double-check the code against the Tabular List and correct the letter.`,
+        suggestion_ar: `تحقق من الرمز مقابل القائمة التفصيلية وصحّح الحرف.`,
+      });
+    }
+
+    // I.2 T36-T50 poisoning codes must use the placeholder X in the 5th position
+    if (/^T(?:3[6-9]|4[0-9]|50)\./.test(c) && /^T(?:3[6-9]|4[0-9]|50)\.\d{2}/.test(stem)) {
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "POISONING_PLACEHOLDER_X",
+        message_en: `Poisoning code ${c} (${level}) appears to be missing the placeholder "X". T36-T50 poisoning codes fill the unused 5th character with X (e.g. T39.1X1A, not T39.11A).`,
+        message_ar: `رمز التسمم ${c} (${level}) يبدو ناقصاً حرف الحشو "X". رموز التسمم T36-T50 تملأ الحرف الخامس غير المستخدم بـ X (مثال: T39.1X1A وليس T39.11A).`,
+        suggestion_en: `Insert the placeholder X, e.g. T39.1X1A.`,
+        suggestion_ar: `أضف حرف الحشو X، مثال: T39.1X1A.`,
+      });
+    }
+
+    // I.3 external-cause codes with a 7th char must fill unused positions with X
+    if (isExternalCause(c) && c.length >= 5 && c.length < 7 && VALID_SEVENTH.test(c[c.length - 1])) {
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "EXTERNAL_CAUSE_INCOMPLETE",
+        message_en: `External-cause code ${c} (${level}) is incomplete. V/W/X/Y codes with a 7th character must fill unused characters with X (e.g. W19.XXXA, V89.2XXA).`,
+        message_ar: `رمز السبب الخارجي ${c} (${level}) غير مكتمل. رموز V/W/X/Y ذات الحرف السابع تملأ المواضع غير المستخدمة بـ X (مثال: W19.XXXA و V89.2XXA).`,
+        suggestion_en: `Pad the unused positions with X before the 7th character.`,
+        suggestion_ar: `املأ المواضع غير المستخدمة بـ X قبل الحرف السابع.`,
+      });
+    }
+
+    // I.4 invalid 7th character for S/T codes
+    if (/^[ST]/.test(c) && c.length >= 7 && !VALID_SEVENTH.test(c[c.length - 1])) {
+      issues.push({
+        level: "warning",
+        code: c,
+        rule: "INVALID_SEVENTH_CHAR",
+        message_en: `Injury code ${c} (${level}) ends with an invalid 7th character. Valid injury 7th characters are A/B/C (initial), D (subsequent), G/K/P (healing complications), S (sequela).`,
+        message_ar: `رمز الإصابة ${c} (${level}) ينتهي بحرف سابع غير صالح. الحروف السابعة الصالحة: A/B/C (أولى)، D (لاحقة)، G/K/P (مضاعفات الالتئام)، S (مضاعفات).`,
+        suggestion_en: `Replace the final character with a valid 7th character.`,
+        suggestion_ar: `استبدل الحرف الأخير بحرف سابع صالح.`,
+      });
+    }
+
+    // I.5 3-character category code that has subdivided children in the built-in dataset
+    if (/^[A-TV-Z]\d{2}$/.test(c)) {
+      const hasChildren = BUILTIN_ICD10.some((e) => e.code.startsWith(c + "."));
+      if (hasChildren) {
+        issues.push({
+          level: "warning",
+          code: c,
+          rule: "NOT_CODED_TO_FULL_SPECIFICITY",
+          message_en: `Code ${c} (${level}) is a category heading with subdivided child codes. ICD-10-CM requires coding to the highest level of specificity documented (combine with the note for a billable code).`,
+          message_ar: `الرمز ${c} (${level}) عنوان فئة له رموز فرعية. يتطلب ICD-10-CM الترميز لأعلى مستوى تحديد موثّق (للحصول على رمز قابل للفوترة).`,
+          suggestion_en: `Add the subdivision characters documented in the note, e.g. ${c}.9 only when no greater specificity exists.`,
+          suggestion_ar: `أضف خانات التحديد الموثقة في النص، مثال: ${c}.9 فقط عند غياب أي تحديد أدق.`,
+        });
+      }
+    }
+  }
+  return issues;
 }

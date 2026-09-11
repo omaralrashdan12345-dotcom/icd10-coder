@@ -27,9 +27,13 @@ export const ICDCodeDetailSchema = z.object({
     .optional()
     .describe("Acuity of the condition"),
   seventh_character: z
-    .enum(["A", "D", "S", "not_required", "missing"])
+    .enum(["A", "B", "C", "D", "S", "G", "K", "P", "not_required", "missing"])
     .optional()
-    .describe("7th character value: A=initial encounter, D=subsequent, S=sequela. 'missing' means required but not provided. 'not_required' means the code does not take a 7th character."),
+    .describe(
+      "7th character value for injury/external-cause codes: A=initial closed, B=initial open (Gustilo I/II), C=initial open (Gustilo III), " +
+      "D=subsequent/routine healing, G=delayed healing, K=nonunion, P=malunion, S=sequela. " +
+      "'missing' means required but not provided. 'not_required' means the code does not take a 7th character."
+    ),
 });
 
 export const ClinicalCodingResponseSchema = z.object({
