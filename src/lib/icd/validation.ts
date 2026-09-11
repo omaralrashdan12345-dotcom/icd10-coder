@@ -207,6 +207,27 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
           message_ar: `تم تطبيق قاعدة "Code First" "${rule.rule_id}" بشكل صحيح. الرمز المرافق الموجود: ${presentCompanions.join("، ") || "(لا يوجد رمز مرافق مطلوب)"}.`,
         });
       }
+
+      // Sprint 2 (idea H): sequencing check — when the rule declares
+      // code_first_codes, those codes must appear EARLIER in the sequence
+      // than the trigger code (official Tabular "code first" notes).
+      if (rule.code_first_codes && rule.code_first_codes.length > 0) {
+        const firstPresentIdx = rule.code_first_codes.reduce<number | null>((acc, cf) => {
+          const idx = codes.findIndex(({ code }) => code.code.startsWith(stem(cf)));
+          return acc === null ? (idx >= 0 ? idx : null) : Math.min(acc, idx >= 0 ? idx : acc);
+        }, null);
+        const triggerIdx = codes.findIndex(({ code }) =>
+          rule.trigger_codes.some((tc) => code.code.startsWith(stem(tc)))
+        );
+        if (firstPresentIdx !== null && triggerIdx > firstPresentIdx) {
+          issues.push({
+            level: "info",
+            rule: `${rule.rule_id}_ORDER_OK`,
+            message_en: `Sequencing check passed for "${rule.rule_id}": the code-first condition appears before the combination/secondary code, matching the official Tabular List note. ${rule.description_en}`,
+            message_ar: `تحقق الترتيب للقاعدة "${rule.rule_id}": الرمز المطلوب أولاً يظهر قبل الرمز المركب، مطابقاً ملاحظات القائمة الجدولية الرسمية. ${rule.description_ar}`,
+          });
+        }
+      }
     }
   }
 
@@ -410,7 +431,9 @@ function formatIssues(codes: { code: ICDCodeDetail; level: string }[]): Validati
 
     // I.1 invalid characters: ICD-10-CM never uses the letters I or O
     const stem = c.length >= 7 && VALID_SEVENTH.test(c[c.length - 1]) ? c.slice(0, -1) : c;
-    if (/[IO]/.test(stem.replace(".", ""))) {
+    // Strip the chapter letter (leading char) before the I/O test — chapter
+    // "I" (I00-I99, circulatory) is a legitimate first character.
+    if (/[IO]/.test(stem.replace(".", "").slice(1))) {
       issues.push({
         level: "warning",
         code: c,

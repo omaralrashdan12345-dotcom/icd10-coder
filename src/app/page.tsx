@@ -55,6 +55,9 @@ import { CodeCard, EmptyCodeCard } from "@/components/icd/code-card";
 import { ValidationPanel, RAGContextPanel } from "@/components/icd/panels";
 import { SettingsDialog, buildProviderKeysHeader } from "@/components/icd/settings-dialog";
 import { AppearanceMenu } from "@/components/icd/appearance-menu";
+import { OfflineDataDialog } from "@/components/icd/offline-data-dialog";
+import { SearchPanel } from "@/components/icd/search-panel";
+import { subscribeFullDb, lookupFullCode, type FullDbStatus } from "@/lib/icd/full-db";
 
 function useLocale(): [Locale, (l: Locale) => void, (k: TranslationKey) => string] {
   // English is the DEFAULT locale (Arabic/English only via explicit user
@@ -95,8 +98,13 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [providers, setProviders] = useState<LLMProviderMetaWithStatus[] | null>(null);
   const [providersVersion, setProvidersVersion] = useState(0);
+  const [dbStatus, setDbStatus] = useState<FullDbStatus | null>(null);
+  const [verification, setVerification] = useState<Record<string, "ok" | "category" | "missing">>({});
   const resultsRef = useRef<HTMLDivElement>(null);
   const analyzeRef = useRef<() => void>(() => {});
+
+  // Full offline database status (Sprint 2)
+  useEffect(() => subscribeFullDb(setDbStatus), []);
 
   // Fetch provider availability on mount AND whenever keys change
   useEffect(() => {
@@ -127,6 +135,36 @@ export default function Home() {
     () => result?.validation_issues.filter((i) => i.level === "warning").length ?? 0,
     [result]
   );
+
+  // All codes as a copyable list for the mobile summary strip
+  const allCodesList = result
+    ? [
+        result.raw_response.primary_icd10,
+        ...result.raw_response.secondary_icd10,
+        ...result.raw_response.tertiary_icd10,
+      ]
+    : [];
+
+  // Existence verification (Sprint 2 — idea I): check every returned code
+  // against the full offline dataset once it is available. Non-blocking.
+  // Three states: "ok" (billable code exists), "category" (exists but is a
+  // non-billable category header — needs more specificity), "missing".
+  const dbState = dbStatus?.state ?? "idle";
+  const dbVersion = dbStatus?.version ?? null;
+  useEffect(() => {
+    if (dbState !== "ready" || !result) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVerification({});
+      return;
+    }
+    const map: Record<string, "ok" | "category" | "missing"> = {};
+    for (const c of allCodesList) {
+      if (map[c.code] !== undefined) continue;
+      const hit = lookupFullCode(c.code);
+      map[c.code] = !hit ? "missing" : hit.billable ? "ok" : "category";
+    }
+    setVerification(map);
+  }, [result, dbState, dbVersion]);
 
   async function handleAnalyze() {
     if (!note.trim()) return;
@@ -181,15 +219,6 @@ export default function Home() {
     }
   }
 
-  // All codes as a copyable list for the mobile summary strip
-  const allCodesList = result
-    ? [
-        result.raw_response.primary_icd10,
-        ...result.raw_response.secondary_icd10,
-        ...result.raw_response.tertiary_icd10,
-      ]
-    : [];
-
   async function handleCopyAllCodes() {
     const text = allCodesList.map((c) => c.code).join(", ");
     try {
@@ -229,6 +258,7 @@ export default function Home() {
               <span className="text-xs sm:text-sm">{t("language_toggle")}</span>
             </Button>
             <AppearanceMenu locale={locale} />
+            <OfflineDataDialog locale={locale} />
             <SettingsDialog locale={locale} onKeysChanged={() => setProvidersVersion((v) => v + 1)} />
           </div>
         </div>
@@ -433,6 +463,9 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                {/* Full-database lookup (Sprint 2) */}
+                <SearchPanel locale={locale} />
               </CardContent>
             </Card>
           </section>
@@ -508,7 +541,7 @@ export default function Home() {
                 </div>
 
                 {/* Primary */}
-                <CodeCard detail={result.raw_response.primary_icd10} level="primary" locale={locale} />
+                <CodeCard detail={result.raw_response.primary_icd10} level="primary" locale={locale} verified={verification[result.raw_response.primary_icd10.code] ?? null} />
 
                 {/* Secondary */}
                 <div className="space-y-2">
@@ -523,7 +556,7 @@ export default function Home() {
                   ) : (
                     <div className="space-y-2">
                       {result.raw_response.secondary_icd10.map((c, idx) => (
-                        <CodeCard key={idx} detail={c} level="secondary" locale={locale} />
+                        <CodeCard key={idx} detail={c} level="secondary" locale={locale} verified={verification[c.code] ?? null} />
                       ))}
                     </div>
                   )}
@@ -542,7 +575,7 @@ export default function Home() {
                   ) : (
                     <div className="space-y-2">
                       {result.raw_response.tertiary_icd10.map((c, idx) => (
-                        <CodeCard key={idx} detail={c} level="tertiary" locale={locale} />
+                        <CodeCard key={idx} detail={c} level="tertiary" locale={locale} verified={verification[c.code] ?? null} />
                       ))}
                     </div>
                   )}

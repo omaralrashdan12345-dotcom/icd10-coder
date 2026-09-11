@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, ShieldCheck, Activity, MapPin, Clock, Hash, Copy, Check } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Activity, MapPin, Clock, Hash, Copy, Check, BadgeCheck, HelpCircle } from "lucide-react";
 import type { ICDCodeDetail } from "@/lib/schemas/icd";
 import type { Locale } from "@/lib/i18n/translations";
 import { t } from "@/lib/i18n/translations";
@@ -14,6 +14,10 @@ interface CodeCardProps {
   detail: ICDCodeDetail;
   level: "primary" | "secondary" | "tertiary";
   locale: Locale;
+  /** Existence check against the full offline ICD-10-CM dataset (Sprint 2).
+   *  "ok" = billable code found, "category" = category header only (needs
+   *  specificity), "missing" = not found, null/undefined = db not loaded. */
+  verified?: "ok" | "category" | "missing" | null;
 }
 
 const LEVEL_STYLES: Record<
@@ -94,7 +98,7 @@ function seventhCharBadgeClass(v: ICDCodeDetail["seventh_character"]): string {
   return "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
 }
 
-export function CodeCard({ detail, level, locale }: CodeCardProps) {
+export function CodeCard({ detail, level, locale, verified }: CodeCardProps) {
   const style = LEVEL_STYLES[level];
   const Icon = style.icon;
   const levelLabel = level === "primary" ? t(locale, "level_primary") : level === "secondary" ? t(locale, "level_secondary") : t(locale, "level_tertiary");
@@ -123,6 +127,33 @@ export function CodeCard({ detail, level, locale }: CodeCardProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <code className="font-mono text-lg sm:text-xl font-bold tracking-tight text-foreground">{detail.code}</code>
                 <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wide", style.chip)}>{levelLabel}</Badge>
+                {verified === "ok" && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                    title={t(locale, "code_verified")}
+                  >
+                    <BadgeCheck className="h-3 w-3" />
+                    <span className="hidden sm:inline">{t(locale, "code_verified")}</span>
+                  </span>
+                )}
+                {verified === "category" && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    title={t(locale, "code_category_only")}
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                    <span className="hidden sm:inline">{t(locale, "code_category_only")}</span>
+                  </span>
+                )}
+                {verified === "missing" && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                    title={t(locale, "code_not_found")}
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                    <span className="hidden sm:inline">{t(locale, "code_not_found")}</span>
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={handleCopyCode}

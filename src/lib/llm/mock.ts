@@ -445,6 +445,14 @@ const MOCK_RULES: MockRule[] = [
     confidence: 0.8,
   },
   {
+    keywords: ["sepsis", "septicemia", "septic shock", "bacteremia"],
+    code: "A41.9",
+    description: "Sepsis, unspecified organism",
+    level: "primary",
+    rationale: "Sepsis — A41.9. When the underlying infection is documented, it is sequenced FIRST and the sepsis code follows.",
+    confidence: 0.8,
+  },
+  {
     keywords: ["dyspnea", "shortness of breath", "short of breath", "breathlessness", "sob"],
     code: "R06.02",
     description: "Shortness of breath",
@@ -1557,6 +1565,40 @@ export const mockProvider: LLMProvider = {
       if (familyOf(d.code) !== primaryFam && !secondaryDetails.some((s) => s.code === d.code)) {
         secondaryDetails.push(d);
       }
+    }
+
+    // 5d. Sepsis sequencing (Sprint 2 — official guideline: code FIRST the
+    // underlying infection, then the sepsis code). When the note documents
+    // sepsis together with an identifiable infection source, the infection
+    // keeps the primary position and A41.9 is added as a secondary.
+    const SEPSIS_DOCUMENTED = ["sepsis", "septicemia", "septic shock", "bacteremia", "urosepsis"]
+      .some((k) => keywordPresentNotNegated(text, k));
+    const SEPSIS_SOURCES = [
+      "urinary tract infection", "uti", "pneumonia", "appendicitis", "cholecystitis",
+      "diverticulitis", "cellulitis", "osteomyelitis", "pyelonephritis", "infected wound",
+      "abscess", "meningitis", "endocarditis", "peritonitis",
+    ];
+    const hasInfectionSource =
+      SEPSIS_SOURCES.some((k) => keywordPresentNotNegated(text, k)) ||
+      [...secondaryDetails.map((s) => s.code), primaryDetail.code].some((code) =>
+        /^(N39\.0|J1[0-8]|J15|K35|K80|K57|K65|K63\.3|L03|M86|N10|A5)/.test(code)
+      );
+    if (
+      SEPSIS_DOCUMENTED &&
+      hasInfectionSource &&
+      !primaryDetail.code.startsWith("A41") &&
+      !secondaryDetails.some((s) => s.code.startsWith("A41"))
+    ) {
+      secondaryDetails.push({
+        code: "A41.9",
+        description: "Sepsis, unspecified organism",
+        rationale:
+          "Sepsis documented with an identified infection source. Per the ICD-10-CM Tabular List, the underlying infection is coded FIRST; the sepsis code (A41.-) follows.",
+        confidence: 0.82,
+        laterality: "not_applicable",
+        acuity: "acute",
+        seventh_character: "not_required",
+      });
     }
 
     // --- 6. Tertiary (supplemental): external causes, activity, place, symptoms

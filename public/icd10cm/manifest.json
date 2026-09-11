@@ -1,0 +1,112 @@
+{
+  "source": "CDC/NCHS ICD-10-CM FY2026 order file (https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/)",
+  "fiscalYear": 2026,
+  "generatedAt": "2026-09-11T21:37:35.330Z",
+  "total": 98166,
+  "billable": 74706,
+  "chunkSize": 6000,
+  "chunks": [
+    {
+      "file": "chunk-00.json",
+      "count": 6000,
+      "from": "A00",
+      "to": "F41.1"
+    },
+    {
+      "file": "chunk-01.json",
+      "count": 6000,
+      "from": "F41.3",
+      "to": "I63.111"
+    },
+    {
+      "file": "chunk-02.json",
+      "count": 6000,
+      "from": "I63.112",
+      "to": "M13.122"
+    },
+    {
+      "file": "chunk-03.json",
+      "count": 6000,
+      "from": "M13.129",
+      "to": "M89.233"
+    },
+    {
+      "file": "chunk-04.json",
+      "count": 6000,
+      "from": "M89.234",
+      "to": "Q65.8"
+    },
+    {
+      "file": "chunk-05.json",
+      "count": 6000,
+      "from": "Q65.81",
+      "to": "S20.90XD"
+    },
+    {
+      "file": "chunk-06.json",
+      "count": 6000,
+      "from": "S20.90XS",
+      "to": "S42.026P"
+    },
+    {
+      "file": "chunk-07.json",
+      "count": 6000,
+      "from": "S42.026S",
+      "to": "S52.561E"
+    },
+    {
+      "file": "chunk-08.json",
+      "count": 6000,
+      "from": "S52.561F",
+      "to": "S62.666P"
+    },
+    {
+      "file": "chunk-09.json",
+      "count": 6000,
+      "from": "S62.666S",
+      "to": "S72.8X9F"
+    },
+    {
+      "file": "chunk-10.json",
+      "count": 6000,
+      "from": "S72.8X9G",
+      "to": "S86.11"
+    },
+    {
+      "file": "chunk-11.json",
+      "count": 6000,
+      "from": "S86.111",
+      "to": "T21.12XA"
+    },
+    {
+      "file": "chunk-12.json",
+      "count": 6000,
+      "from": "T21.12XD",
+      "to": "T44.1X2D"
+    },
+    {
+      "file": "chunk-13.json",
+      "count": 6000,
+      "from": "T44.1X2S",
+      "to": "T82.339"
+    },
+    {
+      "file": "chunk-14.json",
+      "count": 6000,
+      "from": "T82.339A",
+      "to": "V85.2"
+    },
+    {
+      "file": "chunk-15.json",
+      "count": 6000,
+      "from": "V85.2XXA",
+      "to": "Y92.116"
+    },
+    {
+      "file": "chunk-16.json",
+      "count": 2166,
+      "from": "Y92.118",
+      "to": "U09.9"
+    }
+  ]
+}

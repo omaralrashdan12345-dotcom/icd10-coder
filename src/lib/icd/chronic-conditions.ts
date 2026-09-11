@@ -83,14 +83,19 @@ export const CHRONIC_CONDITION_MATCHERS: ChronicConditionMatcher[] = [
   {
     label_en: "Essential hypertension",
     label_ar: "ارتفاع ضغط الدم الأساسي",
-    keywords: ["hypertension", "htn", "high blood pressure", "htn on", "bp elevated chronically", "antihypertensive"],
+    keywords: ["hypertension", "htn", "high blood pressure", "htn on", "bp elevated chronically", "antihypertensive", "hypertensive heart", "hypertensive ckd", "hypertensive chronic kidney", "hypertensive nephropathy"],
     code_prefixes: ["I10", "I11", "I12", "I13", "I15"],
     default_code: "I10",
     description: "Essential (primary) hypertension",
     refine: (note) => {
-      // HTN + CKD combination rule
+      // HTN combination rules (official ICD-10-CM: HTN assumes causal
+      // relationship with CKD and heart failure):
+      //   HTN + CKD          -> I12.-
+      //   HTN + HF           -> I11.0
+      //   HTN + CKD + HF     -> I13.0 (hypertensive heart and CKD with HF)
       const ckd = note.includes("ckd") || note.includes("chronic kidney") || note.includes("renal disease");
       const chf = note.includes("heart failure") || note.includes("chf");
+      if (ckd && chf) return { code: "I13.0", description: "Hypertensive heart and chronic kidney disease with heart failure, and stage 1-4 chronic kidney disease or unspecified" };
       if (ckd) return { code: "I12.9", description: "Hypertensive chronic kidney disease with stage 1-4 or unspecified CKD" };
       if (chf) return { code: "I11.0", description: "Hypertensive heart disease with heart failure" };
       return null;
