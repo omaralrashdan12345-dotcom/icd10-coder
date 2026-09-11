@@ -64,8 +64,8 @@ export const viewport: Viewport = {
  */
 const BOOT_SCRIPT = `(function(){try{
 var d=document.documentElement;
-var l=localStorage.getItem('icd10_locale');
-if(l!=='ar'&&l!=='en'){var n=(navigator.language||'en').toLowerCase();l=n.indexOf('ar')===0?'ar':'en';}
+var l=localStorage.getItem('icd10_locale_v2');
+if(l!=='ar'&&l!=='en'){l='en';}
 d.lang=l;d.dir=l==='ar'?'rtl':'ltr';
 var th=localStorage.getItem('icd10_theme');
 if(th&&/^(emerald|ocean|violet|rose|amber|mono)$/.test(th))d.setAttribute('data-theme',th);

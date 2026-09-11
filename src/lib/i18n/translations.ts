@@ -6,7 +6,7 @@
 
 export type Locale = "ar" | "en";
 
-export const LOCALE_STORAGE_KEY = "icd10_locale";
+export const LOCALE_STORAGE_KEY = "icd10_locale_v2";
 
 export const translations = {
   en: {
@@ -233,8 +233,7 @@ export function detectDefaultLocale(): Locale {
   } catch {
     // localStorage may be blocked — ignore
   }
-  const nav = typeof navigator !== "undefined" ? navigator.language : "en";
-  return nav && nav.toLowerCase().startsWith("ar") ? "ar" : "en";
+  return "en";
 }
 
 export const SAMPLE_CASES: { label_en: string; label_ar: string; text: string }[] = [

@@ -57,8 +57,8 @@ import { SettingsDialog, buildProviderKeysHeader } from "@/components/icd/settin
 import { AppearanceMenu } from "@/components/icd/appearance-menu";
 
 function useLocale(): [Locale, (l: Locale) => void, (k: TranslationKey) => string] {
-  // English is the DEFAULT locale (falls back to device language only when
-  // the device language is Arabic and nothing was saved).
+  // English is the DEFAULT locale (Arabic/English only via explicit user
+  // choice, remembered in localStorage).
   const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
