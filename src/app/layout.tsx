@@ -87,6 +87,10 @@ export default function RootLayout({
     <html lang="en" dir="ltr" suppressHydrationWarning data-theme="emerald" data-font="md">
       <head>
         <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-T27QG0K300" />
+        <script dangerouslySetInnerHTML={{
+          __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T27QG0K300');`
+        }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
