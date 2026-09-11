@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -35,11 +33,14 @@ import {
   HeartPulse,
   ListChecks,
   AlertTriangle,
-  LogOut,
+  Info,
+  Hash,
 } from "lucide-react";
 import {
   translations,
   SAMPLE_CASES,
+  detectDefaultLocale,
+  LOCALE_STORAGE_KEY,
   type Locale,
   type TranslationKey,
 } from "@/lib/i18n/translations";
@@ -52,21 +53,34 @@ const FALLBACK_PROVIDERS = LLM_PROVIDERS as LLMProviderMetaWithStatus[];
 import type { CodingApiResponse } from "@/lib/schemas/icd";
 import { CodeCard, EmptyCodeCard } from "@/components/icd/code-card";
 import { ValidationPanel, RAGContextPanel } from "@/components/icd/panels";
-import { LoginCard } from "@/components/icd/login-card";
 import { SettingsDialog, buildProviderKeysHeader } from "@/components/icd/settings-dialog";
+import { AppearanceMenu } from "@/components/icd/appearance-menu";
 
 function useLocale(): [Locale, (l: Locale) => void, (k: TranslationKey) => string] {
-  const [locale, setLocale] = useState<Locale>("ar");
+  // English is the DEFAULT locale (falls back to device language only when
+  // the device language is Arabic and nothing was saved).
+  const [locale, setLocaleState] = useState<Locale>("en");
+
+  useEffect(() => {
+    setLocaleState(detectDefaultLocale());
+  }, []);
+
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = translations[locale].dir;
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+    } catch {
+      // ignore
+    }
   }, [locale]);
+
+  const setLocale = (l: Locale) => setLocaleState(l);
   const tFn = (k: TranslationKey) => translations[locale][k];
   return [locale, setLocale, tFn];
 }
 
 export default function Home() {
-  const { data: session, status } = useSession();
   const [locale, setLocale, t] = useLocale();
   const [model, setModel] = useState<LLMProviderId>("auto");
   const [note, setNote] = useState("");
@@ -78,6 +92,7 @@ export default function Home() {
   const [providers, setProviders] = useState<LLMProviderMetaWithStatus[] | null>(null);
   const [providersVersion, setProvidersVersion] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const analyzeRef = useRef<() => void>(() => {});
 
   // Fetch provider availability on mount AND whenever keys change
   useEffect(() => {
@@ -109,26 +124,6 @@ export default function Home() {
     [result]
   );
 
-  // Loading state while NextAuth resolves the session
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-          <p className="text-sm text-muted-foreground">…</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Unauthenticated → show login card
-  if (status === "unauthenticated" || !session) {
-    return <LoginCard locale={locale} />;
-  }
-
-  const userName = session.user?.name ?? "Omar";
-  const userInitial = userName.charAt(0).toUpperCase();
-
   async function handleAnalyze() {
     if (!note.trim()) return;
     setLoading(true);
@@ -159,6 +154,7 @@ export default function Home() {
       setLoading(false);
     }
   }
+  analyzeRef.current = handleAnalyze;
 
   function handleClear() {
     setNote("");
@@ -181,67 +177,68 @@ export default function Home() {
     }
   }
 
+  // All codes as a copyable list for the mobile summary strip
+  const allCodesList = result
+    ? [
+        result.raw_response.primary_icd10,
+        ...result.raw_response.secondary_icd10,
+        ...result.raw_response.tertiary_icd10,
+      ]
+    : [];
+
+  async function handleCopyAllCodes() {
+    const text = allCodesList.map((c) => c.code).join(", ");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/80 print:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
-              <HeartPulse className="h-6 w-6" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl brand-bg brand-fg shadow-sm">
+              <HeartPulse className="h-5 w-5 sm:h-6 sm:w-6" />
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-bold leading-tight text-foreground sm:text-lg">
+              <h1 className="truncate text-sm sm:text-base lg:text-lg font-bold leading-tight text-foreground">
                 {t("app_title")}
               </h1>
               <p className="hidden text-xs text-muted-foreground sm:block">{t("app_subtitle")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
               aria-label="Toggle language"
+              className="h-9 px-2.5 sm:h-10"
             >
-              <Languages className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-              <span className="hidden sm:inline">{t("language_toggle")}</span>
+              <Languages className="h-4 w-4 ltr:mr-1.5 rtl:ml-1.5 sm:ltr:mr-2 sm:rtl:ml-2" />
+              <span className="text-xs sm:text-sm">{t("language_toggle")}</span>
             </Button>
-            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 ltr:pl-1 ltr:pr-2 rtl:pr-1 rtl:pl-2 dark:border-slate-700 dark:bg-slate-900">
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-emerald-600 text-white text-xs font-semibold">
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden sm:flex flex-col leading-tight">
-                <span className="text-[10px] text-muted-foreground">{t("welcome")}</span>
-                <span className="text-xs font-semibold text-foreground">{userName}</span>
-              </div>
-            </div>
+            <AppearanceMenu locale={locale} />
             <SettingsDialog locale={locale} onKeysChanged={() => setProvidersVersion((v) => v + 1)} />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: "/" })}
-              aria-label={t("logout_button")}
-              title={t("logout_button")}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline ltr:ml-2 rtl:mr-2">{t("logout_button")}</span>
-            </Button>
           </div>
         </div>
       </header>
 
       {/* Main */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid gap-6 lg:grid-cols-2 print:block">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 pb-28 sm:px-6 sm:py-6 sm:pb-6 lg:pb-8">
+        <div className="grid min-w-0 gap-5 sm:gap-6 lg:grid-cols-2 print:block">
           {/* Input Column */}
-          <section className="space-y-4 print:hidden">
+          <section className="min-w-0 space-y-4 print:hidden">
             <Card className="border-2 border-slate-200 dark:border-slate-800">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Activity className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <Activity className="h-5 w-5 brand-text" />
                   {t("input_label")}
                 </CardTitle>
               </CardHeader>
@@ -252,7 +249,7 @@ export default function Home() {
                     {t("model_label")}
                   </Label>
                   <Select value={model} onValueChange={(v) => setModel(v as LLMProviderId)}>
-                    <SelectTrigger id="model-select" className="w-full">
+                    <SelectTrigger id="model-select" className="w-full min-h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -271,9 +268,9 @@ export default function Home() {
                                 {p.free_tier && (
                                   <Badge
                                     variant="outline"
-                                    className="text-[9px] uppercase px-1 py-0 h-3.5 bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                    className="text-[9px] uppercase px-1 py-0 h-3.5 brand-soft-bg brand-muted-text border-brand-soft"
                                   >
-                                    {locale === "ar" ? "مجاني" : "FREE"}
+                                    {t("free_badge")}
                                   </Badge>
                                 )}
                                 {configured ? (
@@ -281,7 +278,7 @@ export default function Home() {
                                     variant="outline"
                                     className="text-[9px] uppercase px-1 py-0 h-3.5 bg-slate-50 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
                                   >
-                                    {locale === "ar" ? "جاهز" : "ready"}
+                                    {t("ready_badge")}
                                   </Badge>
                                 ) : (
                                   <Badge
@@ -305,27 +302,27 @@ export default function Home() {
                   {/* Quick links to sign up for free API keys */}
                   {(providers ?? FALLBACK_PROVIDERS).some((p) => !p.configured && p.signup_url) && (
                     <details className="text-xs">
-                      <summary className="cursor-pointer text-emerald-600 dark:text-emerald-400 hover:underline">
-                        {locale === "ar" ? "كيف تحصل على مفاتيح API مجانية؟" : "How to get free API keys?"}
+                      <summary className="cursor-pointer brand-text hover:underline">
+                        {t("how_get_keys")}
                       </summary>
                       <ul className="mt-2 space-y-1 text-muted-foreground ltr:ml-4 rtl:mr-4 list-disc">
                         <li>
                           <strong>Groq</strong> (free, ultra-fast Llama 3.3 70B):{" "}
-                          <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                          <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             console.groq.com/keys
                           </a>{" "}
                           → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GROQ_API_KEY</code>
                         </li>
                         <li>
                           <strong>Google Gemini</strong> (free, 1M context):{" "}
-                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             aistudio.google.com/app/apikey
                           </a>{" "}
                           → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GEMINI_API_KEY</code>
                         </li>
                         <li>
                           <strong>OpenRouter</strong> (free Llama / Gemma):{" "}
-                          <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                          <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             openrouter.ai/keys
                           </a>{" "}
                           → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">OPENROUTER_API_KEY</code>
@@ -335,16 +332,16 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Sample cases */}
+                {/* Sample cases — horizontal scroll on mobile */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">{t("sample_cases")}</Label>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible chip-scroll">
                     {SAMPLE_CASES.map((c, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setNote(c.text)}
-                        className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
                       >
                         {locale === "ar" ? c.label_ar : c.label_en}
                       </button>
@@ -360,7 +357,7 @@ export default function Home() {
                     placeholder={t("input_placeholder")}
                     rows={7}
                     className={cn(
-                      "resize-y text-sm leading-relaxed",
+                      "resize-y text-base leading-relaxed sm:text-sm",
                       overLimit && "border-rose-400 focus-visible:ring-rose-400"
                     )}
                   />
@@ -371,12 +368,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Buttons */}
-                <div className="flex flex-wrap gap-2">
+                {/* Buttons — inline on desktop, sticky bottom bar on mobile */}
+                <div className="hidden sm:flex flex-wrap gap-2">
                   <Button
                     onClick={handleAnalyze}
                     disabled={loading || !note.trim() || overLimit}
-                    className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-700 text-white"
+                    className="flex-1 min-w-[140px] brand-bg hover:opacity-90 text-white brand-fg"
+                    style={{ backgroundColor: "var(--brand)" }}
                   >
                     {loading ? (
                       <>
@@ -401,39 +399,32 @@ export default function Home() {
                     <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
                       <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                       <div className="min-w-0 flex-1">
-                        <div className="font-semibold mb-1">{locale === "ar" ? "خطأ في التحليل" : "Analysis failed"}</div>
+                        <div className="font-semibold mb-1">{t("error_title")}</div>
                         <div className="break-words text-xs leading-relaxed">{error}</div>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="text-muted-foreground">{locale === "ar" ? "جرّب:" : "Try:"}</span>
+                      <span className="text-muted-foreground">{t("try_prefix")}</span>
                       <button
                         type="button"
                         onClick={() => { setModel("auto"); setError(null); }}
-                        className="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
                       >
-                        {locale === "ar" ? "تبديل إلى Auto (يحاول GLM ثم يعمل دون اتصال)" : "Switch to Auto (tries GLM then offline)"}
+                        {t("try_auto")}
                       </button>
                       <button
                         type="button"
                         onClick={() => { setModel("mock"); setError(null); }}
-                        className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       >
-                        {locale === "ar" ? "تبديل إلى المُرمّز الذكي (دون اتصال)" : "Switch to Smart Offline Coder"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setModel("glm-4-flash"); setError(null); }}
-                        className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
-                      >
-                        {locale === "ar" ? "تبديل إلى GLM-4-Flash (مجاني)" : "Switch to GLM-4-Flash (free)"}
+                        {t("try_offline")}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleAnalyze()}
-                        className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       >
-                        {locale === "ar" ? "إعادة المحاولة" : "Retry"}
+                        {t("try_retry")}
                       </button>
                     </div>
                   </div>
@@ -443,14 +434,14 @@ export default function Home() {
           </section>
 
           {/* Results Column */}
-          <section ref={resultsRef} className="space-y-4 print:space-y-3">
+          <section ref={resultsRef} className="min-w-0 space-y-4 print:space-y-3">
             {/* Results header bar — print-only visible */}
             <div className="hidden print:block mb-4">
               <h1 className="text-xl font-bold">{t("app_title")}</h1>
               <p className="text-sm text-muted-foreground">{t("app_subtitle")}</p>
               <hr className="my-3" />
               <div className="text-xs">
-                <div><strong>{t("signed_in_as")}:</strong> {userName}</div>
+                <div><strong>{t("app_subtitle")}</strong></div>
                 <div className="mt-1"><strong>{t("input_label")}:</strong> {note}</div>
                 <div className="mt-1"><strong>{t("model_label")}:</strong> {result?.model ?? model}</div>
               </div>
@@ -460,7 +451,7 @@ export default function Home() {
               <>
                 {/* Results summary bar */}
                 <div className="flex flex-wrap items-center gap-2 print:hidden">
-                  <h2 className="text-base font-bold">{t("results_title")}</h2>
+                  <h2 className="text-base sm:text-lg font-bold">{t("results_title")}</h2>
                   <Badge variant="outline" className="font-mono text-xs">{result.model}</Badge>
                   <Badge variant="outline" className="text-xs">
                     {t("latency")}: {result.latency_ms} {t("ms")}
@@ -468,7 +459,7 @@ export default function Home() {
                   {errorCount > 0 && <Badge className="bg-rose-600 text-white text-xs">{errorCount} {t("errors")}</Badge>}
                   {warnCount > 0 && <Badge className="bg-amber-500 text-white text-xs">{warnCount} {t("warnings")}</Badge>}
                   <div className="ml-auto flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopyJson}>
+                    <Button variant="outline" size="sm" onClick={handleCopyJson} className="hidden sm:inline-flex">
                       {copied ? <Check className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" /> : <Copy className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />}
                       {copied ? t("copied") : t("copy_json")}
                     </Button>
@@ -479,6 +470,39 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Mobile code summary strip — big, tappable, copyable */}
+                <div className="rounded-xl border-2 border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 print:hidden sm:hidden">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {t("codes_summary")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyAllCodes}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300"
+                    >
+                      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {copied ? t("copied") : t("copy_all_codes")}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allCodesList.map((c, idx) => (
+                      <code
+                        key={idx}
+                        className={cn(
+                          "inline-flex items-center rounded-md border px-2 py-1 font-mono text-sm font-bold",
+                          idx === 0
+                            ? "brand-soft-bg-strong brand-text-strong border-current"
+                            : "border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                        )}
+                      >
+                        <Hash className="mr-1 h-3 w-3 opacity-50" />
+                        {c.code}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Primary */}
                 <CodeCard detail={result.raw_response.primary_icd10} level="primary" locale={locale} />
 
@@ -486,8 +510,9 @@ export default function Home() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <ListChecks className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    <h3 className="text-sm font-semibold">{t("secondary")}</h3>
+                    <h3 className="text-sm sm:text-base font-semibold">{t("secondary")}</h3>
                     <Badge variant="outline" className="text-xs">{result.raw_response.secondary_icd10.length}</Badge>
+                    <InfoTooltip text={t("secondary_hint")} />
                   </div>
                   {result.raw_response.secondary_icd10.length === 0 ? (
                     <EmptyCodeCard level="secondary" locale={locale} count={0} />
@@ -500,12 +525,13 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Tertiary */}
+                {/* Supplemental (tertiary) */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <ListChecks className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                    <h3 className="text-sm font-semibold">{t("tertiary")}</h3>
+                    <h3 className="text-sm sm:text-base font-semibold">{t("tertiary")}</h3>
                     <Badge variant="outline" className="text-xs">{result.raw_response.tertiary_icd10.length}</Badge>
+                    <InfoTooltip text={t("tertiary_hint")} />
                   </div>
                   {result.raw_response.tertiary_icd10.length === 0 ? (
                     <EmptyCodeCard level="tertiary" locale={locale} count={0} />
@@ -614,12 +640,56 @@ export default function Home() {
         </div>
       </main>
 
+      {/* Sticky mobile action bar — Analyze always reachable */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 pb-safe backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 print:hidden sm:hidden">
+        <div className="flex gap-2">
+          <Button
+            onClick={() => analyzeRef.current()}
+            disabled={loading || !note.trim() || overLimit}
+            className="h-12 flex-1 brand-bg brand-fg text-base"
+            style={{ backgroundColor: "var(--brand)" }}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 ltr:mr-2 rtl:ml-2 animate-spin" />
+                {t("analyzing")}
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-5 w-5 ltr:mr-2 rtl:ml-2" />
+                {t("analyze_button")}
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleClear}
+            disabled={loading}
+            className="h-12 w-12 p-0"
+            aria-label={t("clear_button")}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200/70 bg-white/60 py-3 dark:border-slate-800/70 dark:bg-slate-950/60 print:hidden">
+      <footer className="mt-auto border-t border-slate-200/70 bg-white/60 py-3 pb-safe dark:border-slate-800/70 dark:bg-slate-950/60 print:hidden sm:pb-3">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <p className="text-center text-xs text-muted-foreground">{t("footer")}</p>
         </div>
       </footer>
     </div>
+  );
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex">
+      <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground/70" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 w-64 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-2.5 text-[11px] font-normal leading-snug text-slate-600 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 ltr:left-0 rtl:right-0 ltr:translate-x-0 rtl:translate-x-0 sm:ltr:left-1/2 sm:rtl:right-auto sm:rtl:left-1/2 sm:-translate-x-1/2">
+        {text}
+      </span>
+    </span>
   );
 }

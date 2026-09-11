@@ -1,10 +1,33 @@
 # ICD-10-CM AI Coding Agent
 
-Convert clinical text into ICD-10-CM codes ranked dynamically (Primary / Secondary / Tertiary) with RAG validation, 7th-character checks, and structured LLM outputs.
+Convert clinical text into ICD-10-CM codes ranked dynamically (Primary / Secondary / Supplemental) with RAG validation, 7th-character checks, and structured LLM outputs.
 
-**Languages:** Arabic (RTL, default) / English (LTR)
+**Languages:** English (LTR, default) / Arabic (RTL) — remember your choice
 **Stack:** Next.js 16 + TypeScript + Tailwind CSS 4 + shadcn/ui + NextAuth.js + Z.ai GLM
 **PWA:** Installable on Android, iOS, and Desktop
+
+---
+
+## 🆕 What's new in v0.3
+
+- **English is now the default language** (device language respected; choice persists)
+- **Mobile-first redesign** — sticky Analyze action bar, horizontal sample-case scroller, 44px touch targets, no-zoom inputs, safe-area padding, compact header
+- **Smarter offline coder** — 111 clinical patterns + 35 chronic-condition matchers, negation-aware matching ("no fever" never codes fever), body-part-scoped laterality ("bilateral knee OA" no longer makes a wrist fracture bilateral), acuity & encounter-timing detection driving the 7th character (A/D/S)
+- **Secondary Diagnoses fixed** — per UHDDS / ICD-10-CM Official Guidelines Section III, the Secondary slot now captures ALL co-existing conditions affecting care (chronic AND acute), with a new `SECONDARY_MISSING` validation warning when a documented condition was not coded. External-cause codes (V/W/X/Y) stay supplemental (last) per Chapter 20 — and a new `EXTERNAL_CAUSE_IN_SECONDARY` error catches misplacement
+- **Expanded offline ICD-10 database** — ~400 curated codes across all chapters (was ~70), with BM25 retrieval, medical synonym expansion ("htn" → hypertension), light stemming, and fuzzy trigram matching
+- **Combination-code intelligence** — diabetic foot ulcer → E11.621 code-first; HTN + CKD → I12.- + N18.-; diabetes refined by complication (E11.40/E11.65/E11.22…)
+- **6 color themes** (Emerald, Ocean, Violet, Rose, Amber, Slate Mono) + light/dark/system mode + 4 text sizes — all persisted
+- **Larger fonts everywhere** + per-code copy buttons and a mobile code-summary strip with "copy all codes"
+
+---
+
+## ❓ Secondary vs Supplemental — what goes where?
+
+| Slot | Contents | Guideline |
+|------|----------|-----------|
+| **Primary** | The principal diagnosis — the main reason for the encounter (injury S/T code for injuries, never V/W/X/Y) | OGCR Section II |
+| **Secondary** | ALL co-existing conditions affecting care this encounter — chronic (diabetes, HTN, CKD, COPD…) AND acute (dehydration, anemia). External causes do **NOT** belong here | OGCR Section III + UHDDS |
+| **Supplemental** | External cause codes (how it happened), place (Y92), activity (Y93), status (Y99) — reported AFTER all diagnosis codes | OGCR Chapter 20 |
 
 ---
 

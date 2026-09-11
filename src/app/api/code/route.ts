@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     ensureExternalCause(validated, note);
 
     // 4. Validation engine
-    const issues = validateResponse(validated);
+    const issues = validateResponse(validated, note);
 
     const apiResponse: CodingApiResponse = {
       ok: true,
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
           entities_extracted: offlineResult.parsed.entities_extracted ?? [],
         });
         ensureExternalCause(offlineValidated, note);
-        const issues = validateResponse(offlineValidated);
+        const issues = validateResponse(offlineValidated, note);
 
         const apiResponse: CodingApiResponse = {
           ok: true,

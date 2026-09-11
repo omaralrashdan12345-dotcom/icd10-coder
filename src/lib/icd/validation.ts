@@ -8,6 +8,11 @@
  * 3. Confidence flag: codes with confidence < 0.6 emit a warning suggesting
  *    human review.
  * 4. Duplicate-code detection across the three levels.
+ * 5. External-cause ordering: V/W/X/Y codes must come AFTER all diagnosis
+ *    codes (supplemental, per ICD-10-CM Chapter 20 guidelines).
+ * 6. Missing-secondary detection: if the note documents a common chronic
+ *    condition (UHDDS "other diagnoses") but no Secondary code covers it,
+ *    emit a warning. This is the #1 real-world miss in AI coding.
  */
 
 import type {
@@ -16,6 +21,7 @@ import type {
   ValidationIssue,
 } from "@/lib/schemas/icd";
 import { BUILTIN_ICD10, CODE_FIRST_RULES } from "./data";
+import { CHRONIC_CONDITION_MATCHERS } from "./chronic-conditions";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -30,10 +36,10 @@ import { BUILTIN_ICD10, CODE_FIRST_RULES } from "./data";
  */
 const SEVENTH_CHAR_PREFIXES: RegExp[] = [
   /^[S]\d/,   // Injury chapter — most subcategories require 7th char
-  /^[T]\d{2}/, // Injury / poisoning / other effects — most require 7th char
-  /^[W]\d/,   // External causes — fall
+  /^[T](?!(30|31|32))\d{2}/, // Injury/poisoning — except T30-T32 (burn extent) which take no 7th char
+  /^[W]\d/,   // External causes — most W codes take 7th char
   /^[X]\d/,   // External causes — exposure
-  /^[Y]\d/,   // External causes — other
+  /^[Y](?!(92|93|99))\d/, // External causes — except Y92/Y93/Y99 (place/activity/status: no 7th char)
 ];
 
 /**
@@ -59,6 +65,57 @@ function stem(code: string): string {
   return code;
 }
 
+/**
+ * Negation-aware detection of a keyword in a clinical note.
+ * Returns true when the keyword is present and NOT negated within the
+ * preceding text — the window stops at sentence boundaries (. ! ? ; and
+ * newlines) so "No gangrene. Hypertension..." does NOT negate hypertension.
+ */
+export function keywordPresentNotNegated(text: string, keyword: string): boolean {
+  const t = text.toLowerCase();
+  const k = keyword.toLowerCase();
+  const NEGATIONS = [
+    "no ", "not ", "denies", "denied", "without ", "negative for",
+    "ruled out", "rule out", "free of", "absent ", "unremarkable",
+    "clear of", "never had", "history negative",
+  ];
+
+  // Short pure-alphanumeric keywords (acronyms like "tia", "sob", "uti")
+  // must match on word boundaries — otherwise "tia" matches inside
+  // "essential". Longer keywords keep substring semantics ("cat scratch",
+  // "type 2 diabetes").
+  const positions: number[] = [];
+  if (k.length <= 5 && /^[a-z0-9]+$/i.test(k)) {
+    const re = new RegExp(`\\b${k}\\b`, "g");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(t)) !== null) positions.push(m.index);
+  } else {
+    let i = t.indexOf(k);
+    while (i !== -1) {
+      positions.push(i);
+      i = t.indexOf(k, i + 1);
+    }
+  }
+
+  for (const idx of positions) {
+    const windowStart = Math.max(0, idx - 60);
+    let window = t.slice(windowStart, idx);
+    // Only the current sentence counts — negation does not cross
+    // sentence-ending punctuation.
+    const lastSentenceBreak = Math.max(
+      window.lastIndexOf("."),
+      window.lastIndexOf("!"),
+      window.lastIndexOf("?"),
+      window.lastIndexOf(";"),
+      window.lastIndexOf("\n")
+    );
+    if (lastSentenceBreak !== -1) window = window.slice(lastSentenceBreak + 1);
+    const negated = NEGATIONS.some((n) => window.includes(n));
+    if (!negated) return true;
+  }
+  return false;
+}
+
 function codeRequires7th(code: string): boolean {
   // Check built-in dataset (authoritative)
   for (const c of BUILTIN_REQUIRES_7TH) {
@@ -76,7 +133,7 @@ function allCodes(resp: ClinicalCodingResponse): { code: ICDCodeDetail; level: s
   ];
 }
 
-export function validateResponse(resp: ClinicalCodingResponse): ValidationIssue[] {
+export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: string): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const codes = allCodes(resp);
 
@@ -181,5 +238,55 @@ export function validateResponse(resp: ClinicalCodingResponse): ValidationIssue[
     }
   }
 
+  // 5. External-cause ordering: V/W/X/Y codes are supplemental and must come
+  //    AFTER every A-Z/R/S/T diagnosis code (ICD-10-CM Chapter 20 guidelines).
+  const orderedCodes = [
+    ...resp.secondary_icd10.map((c, i) => ({ pos: i, code: c, level: "secondary" as const })),
+    ...resp.tertiary_icd10.map((c, i) => ({ pos: i, code: c, level: "tertiary" as const })),
+  ];
+  const secondaryHasExternal = orderedCodes.some(
+    (x) => x.level === "secondary" && isExternalCause(x.code.code)
+  );
+  if (secondaryHasExternal) {
+    issues.push({
+      level: "error",
+      rule: "EXTERNAL_CAUSE_IN_SECONDARY",
+      message_en:
+        "An External Cause code (V/W/X/Y) was placed in Secondary Diagnoses. External cause codes are supplemental — they describe HOW an injury happened, not a co-existing condition. Per Chapter 20 guidelines they must be reported in the supplemental (last) section, after all diagnosis codes.",
+      message_ar:
+        "تم وضع رمز سبب خارجي (V/W/X/Y) ضمن التشخيصات الثانوية. رموز الأسباب الخارجية تكميلية — تصف كيف حدثت الإصابة وليست حالة مصاحبة. وفق قواعد الفصل 20 يجب أن تُبلَّغ في القسم التكميلي الأخير بعد جميع رموز التشخيص.",
+      suggestion_en:
+        "Move the V/W/X/Y code(s) from Secondary to the Supplemental section (tertiary), keeping them after all condition codes.",
+      suggestion_ar:
+        "انقل الرموز (V/W/X/Y) من الثانوية إلى القسم التكميلي (الثالثي) بحيث تأتي بعد جميع رموز الحالات.",
+    });
+  }
+
+  // 6. Missing-secondary detection (UHDDS "other diagnoses" scan).
+  //    If the note clearly documents a common chronic condition but no code
+  //    anywhere covers its chapter, warn the coder.
+  for (const cc of CHRONIC_CONDITION_MATCHERS) {
+    const mentioned = cc.keywords.some((k) => keywordPresentNotNegated(clinicalNote ?? "", k));
+    if (!mentioned) continue;
+    const covered = codes.some(({ code }) =>
+      cc.code_prefixes.some((p) => code.code.toUpperCase().startsWith(p.toUpperCase()))
+    );
+    if (!covered) {
+      issues.push({
+        level: "warning",
+        rule: "SECONDARY_MISSING",
+        message_en: `The note documents "${cc.label_en}" but no ${cc.code_prefixes.join(", ")} code was assigned. Per UHDDS / OGCR Section III, co-existing conditions that affect patient care (clinical evaluation, treatment, diagnostics, or monitoring) must be reported as secondary diagnoses every encounter where they are relevant.`,
+        message_ar: `النص يذكر "${cc.label_ar}" لكن لم يُسند أي رمز من ${cc.code_prefixes.join("، ")}. وفق تعريف UHDDS والقسم الثالث من الدليل الرسمي، يجب ترميز الحالات المصاحبة المؤثرة على العلاج كتشخيصات ثانوية في كل زيارة.`,
+        suggestion_en: `If "${cc.label_en}" is actively treated or monitored, add the appropriate ${cc.code_prefixes[0]}- code to Secondary Diagnoses. If it is historical/inactive, consider Z87.- personal history instead.`,
+        suggestion_ar: `إذا كانت "${cc.label_ar}" تحت علاج أو متابعة فعّالة، أضف الرمز المناسب ${cc.code_prefixes[0]}- إلى التشخيصات الثانوية. وإذا كانت تاريخية/غير نشطة فكر في رمز Z87.- (تاريخ شخصي).`,
+      });
+    }
+  }
+
   return issues;
+}
+
+function isExternalCause(code: string): boolean {
+  const c = code.charAt(0).toUpperCase();
+  return c === "V" || c === "W" || c === "X" || c === "Y";
 }

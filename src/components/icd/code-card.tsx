@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, ShieldCheck, Activity, MapPin, Clock, Hash } from "lucide-react";
+import { AlertTriangle, ShieldCheck, Activity, MapPin, Clock, Hash, Copy, Check } from "lucide-react";
 import type { ICDCodeDetail } from "@/lib/schemas/icd";
 import type { Locale } from "@/lib/i18n/translations";
 import { t } from "@/lib/i18n/translations";
@@ -20,9 +21,9 @@ const LEVEL_STYLES: Record<
   { border: string; bg: string; chip: string; icon: typeof Activity }
 > = {
   primary: {
-    border: "border-emerald-600/50",
-    bg: "bg-emerald-50/60 dark:bg-emerald-950/30",
-    chip: "bg-emerald-600 text-white",
+    border: "border-brand",
+    bg: "brand-soft-bg",
+    chip: "brand-bg brand-fg",
     icon: Activity,
   },
   secondary: {
@@ -40,13 +41,13 @@ const LEVEL_STYLES: Record<
 };
 
 function confidenceColor(c: number): string {
-  if (c >= 0.85) return "text-emerald-600 dark:text-emerald-400";
+  if (c >= 0.85) return "brand-text-strong";
   if (c >= 0.6) return "text-amber-600 dark:text-amber-400";
   return "text-rose-600 dark:text-rose-400";
 }
 
 function confidenceBarColor(c: number): string {
-  if (c >= 0.85) return "bg-emerald-600";
+  if (c >= 0.85) return "brand-bg";
   if (c >= 0.6) return "bg-amber-500";
   return "bg-rose-500";
 }
@@ -93,6 +94,17 @@ export function CodeCard({ detail, level, locale }: CodeCardProps) {
   const Icon = style.icon;
   const levelLabel = level === "primary" ? t(locale, "level_primary") : level === "secondary" ? t(locale, "level_secondary") : t(locale, "level_tertiary");
   const confidence = typeof detail.confidence === "number" ? detail.confidence : 0;
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  async function handleCopyCode() {
+    try {
+      await navigator.clipboard.writeText(detail.code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 1500);
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <Card className={cn("border-2 shadow-sm transition-shadow hover:shadow-md", style.border, style.bg)}>
@@ -104,8 +116,17 @@ export function CodeCard({ detail, level, locale }: CodeCardProps) {
             </span>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <code className="font-mono text-lg font-bold tracking-tight text-foreground">{detail.code}</code>
+                <code className="font-mono text-lg sm:text-xl font-bold tracking-tight text-foreground">{detail.code}</code>
                 <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wide", style.chip)}>{levelLabel}</Badge>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white/80 text-slate-500 transition hover:brand-soft-bg hover:brand-text-strong dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-400"
+                  aria-label={t(locale, "copy_code")}
+                  title={t(locale, "copy_code")}
+                >
+                  {copiedCode ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
               </div>
               <p className="mt-1 text-sm text-muted-foreground leading-snug break-words">{detail.description}</p>
             </div>
@@ -185,5 +206,5 @@ export function EmptyCodeCard({ level, locale, count }: EmptyCodeCardProps) {
 export function ValidationAlertIcon({ level }: { level: "error" | "warning" | "info" }) {
   if (level === "error") return <AlertTriangle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />;
   if (level === "warning") return <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />;
-  return <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+  return <ShieldCheck className="h-4 w-4 brand-text shrink-0" />;
 }

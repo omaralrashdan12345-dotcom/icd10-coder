@@ -19,7 +19,8 @@ import { isZaiConfigured } from "./glm";
  *   3. Groq Llama 3.1 8B   (free, fastest small model — uses GROQ_API_KEY)
  *   4. Pollinations.ai OpenAI (truly free, no API key needed)
  *   5. Pollinations.ai Mistral (truly free, no API key needed)
- *   6. Smart Offline Coder (67 clinical patterns, always works)
+ *   6. Smart Offline Coder (111 clinical patterns + 35 chronic-condition
+ *      matchers, always works)
  *
  * Each tier logs which path actually succeeded so the UI shows e.g.
  * "Auto → Groq (GLM-Flash unreachable)".
@@ -122,7 +123,7 @@ export const autoProvider: LLMProvider = {
     return {
       parsed: {
         ...offline.parsed,
-        summary: `[⚠️ All online models unreachable (${failedReasons.join(", ")}). Fell back to Smart Offline Coder — pattern-matched from 67 clinical patterns.] ${offline.parsed.summary ?? ""}`.trim(),
+        summary: `[⚠️ All online models unreachable (${failedReasons.join(", ")}). Fell back to Smart Offline Coder — pattern-matched from the built-in clinical library with negation-aware matching.] ${offline.parsed.summary ?? ""}`.trim(),
       },
       raw: offline.raw,
     };

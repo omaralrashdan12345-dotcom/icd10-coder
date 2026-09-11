@@ -37,11 +37,20 @@ export const ClinicalCodingResponseSchema = z.object({
   secondary_icd10: z
     .array(ICDCodeDetailSchema)
     .default([])
-    .describe("Chronic comorbidities or co-existing conditions that affect the treatment plan (e.g. diabetes, hypertension, CKD)"),
+    .describe(
+      "ALL co-existing conditions that affect patient care during this encounter (UHDDS 'other diagnoses' / OGCR Section III) — chronic AND acute. " +
+      "Includes chronic comorbidities (diabetes, hypertension, CKD, COPD, AF, hypothyroidism, hyperlipidemia, osteoporosis, …) AND other active conditions " +
+      "requiring clinical evaluation, therapeutic treatment, diagnostic procedures, or monitoring (e.g. dehydration, anemia, hypoglycemia). " +
+      "External cause codes (V/W/X/Y) do NOT belong here — they are supplemental and go last."
+    ),
   tertiary_icd10: z
     .array(ICDCodeDetailSchema)
     .default([])
-    .describe("External cause codes (W/X/Y), acute complications, accompanying symptoms, or supporting examination findings"),
+    .describe(
+      "Supplemental codes reported AFTER all diagnosis codes: external cause codes (V/W/X/Y — how the injury happened), place of occurrence (Y92), " +
+      "activity (Y93), external cause status (Y99), acute complications of the primary, and accompanying symptoms/findings. " +
+      "Per ICD-10-CM Chapter 20 guidelines, external cause codes are NEVER the principal/first-listed diagnosis."
+    ),
   summary: z.string().optional().describe("Optional short narrative summary of the encounter and coding rationale"),
   entities_extracted: z
     .array(

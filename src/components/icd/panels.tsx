@@ -23,7 +23,7 @@ export function ValidationPanel({ issues, locale }: ValidationPanelProps) {
     <Card className="border-2 border-slate-200 dark:border-slate-800">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <ShieldCheck className="h-5 w-5 brand-text" />
           {t(locale, "validation_title")}
           {issues.length > 0 && (
             <div className="ml-auto flex items-center gap-1.5">
@@ -36,7 +36,7 @@ export function ValidationPanel({ issues, locale }: ValidationPanelProps) {
       </CardHeader>
       <CardContent className="space-y-2">
         {issues.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-md bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <div className="flex items-center gap-2 rounded-md brand-soft-bg p-3 text-sm brand-muted-text">
             <ShieldCheck className="h-4 w-4" />
             {t(locale, "no_validation")}
           </div>
@@ -119,7 +119,7 @@ export function RAGContextPanel({ results, nlmOnline, locale }: RAGContextPanelP
                   className={cn(
                     "shrink-0 font-mono text-[10px]",
                     r.source === "nlm"
-                      ? "border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-300"
+                      ? "border-brand text-[var(--brand-muted-text)]"
                       : "border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300"
                   )}
                 >

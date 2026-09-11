@@ -37,6 +37,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-foreground: var(--brand-foreground);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -76,6 +80,57 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Brand (theme accent) — default = Emerald */
+  --brand: #059669;
+  --brand-strong: #047857;
+  --brand-soft: #ecfdf5;
+  --brand-soft-strong: #d1fae5;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #047857;
+  --brand-header-tint: #f8fafc;
+}
+
+/* ============ COLOR THEMES (light) ============ */
+html[data-theme="ocean"] {
+  --brand: #0284c7;
+  --brand-strong: #0369a1;
+  --brand-soft: #f0f9ff;
+  --brand-soft-strong: #e0f2fe;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #0369a1;
+}
+html[data-theme="violet"] {
+  --brand: #7c3aed;
+  --brand-strong: #6d28d9;
+  --brand-soft: #f5f3ff;
+  --brand-soft-strong: #ede9fe;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #6d28d9;
+}
+html[data-theme="rose"] {
+  --brand: #e11d48;
+  --brand-strong: #be123c;
+  --brand-soft: #fff1f2;
+  --brand-soft-strong: #ffe4e6;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #be123c;
+}
+html[data-theme="amber"] {
+  --brand: #d97706;
+  --brand-strong: #b45309;
+  --brand-soft: #fffbeb;
+  --brand-soft-strong: #fef3c7;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #b45309;
+}
+html[data-theme="mono"] {
+  --brand: #334155;
+  --brand-strong: #1e293b;
+  --brand-soft: #f8fafc;
+  --brand-soft-strong: #e2e8f0;
+  --brand-foreground: #ffffff;
+  --brand-muted-text: #334155;
 }
 
 .dark {
@@ -110,7 +165,62 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Brand (theme accent) — dark mode variants */
+  --brand: #10b981;
+  --brand-strong: #34d399;
+  --brand-soft: rgba(16, 185, 129, 0.12);
+  --brand-soft-strong: rgba(16, 185, 129, 0.22);
+  --brand-foreground: #052e21;
+  --brand-muted-text: #6ee7b7;
+  --brand-header-tint: rgba(2, 6, 23, 0.8);
 }
+.dark[data-theme="ocean"] {
+  --brand: #38bdf8;
+  --brand-strong: #7dd3fc;
+  --brand-soft: rgba(56, 189, 248, 0.12);
+  --brand-soft-strong: rgba(56, 189, 248, 0.22);
+  --brand-foreground: #082f49;
+  --brand-muted-text: #7dd3fc;
+}
+.dark[data-theme="violet"] {
+  --brand: #a78bfa;
+  --brand-strong: #c4b5fd;
+  --brand-soft: rgba(167, 139, 250, 0.12);
+  --brand-soft-strong: rgba(167, 139, 250, 0.22);
+  --brand-foreground: #2e1065;
+  --brand-muted-text: #c4b5fd;
+}
+.dark[data-theme="rose"] {
+  --brand: #fb7185;
+  --brand-strong: #fda4af;
+  --brand-soft: rgba(251, 113, 133, 0.12);
+  --brand-soft-strong: rgba(251, 113, 133, 0.22);
+  --brand-foreground: #4c0519;
+  --brand-muted-text: #fda4af;
+}
+.dark[data-theme="amber"] {
+  --brand: #fbbf24;
+  --brand-strong: #fcd34d;
+  --brand-soft: rgba(251, 191, 36, 0.12);
+  --brand-soft-strong: rgba(251, 191, 36, 0.22);
+  --brand-foreground: #451a03;
+  --brand-muted-text: #fcd34d;
+}
+.dark[data-theme="mono"] {
+  --brand: #94a3b8;
+  --brand-strong: #cbd5e1;
+  --brand-soft: rgba(148, 163, 184, 0.12);
+  --brand-soft-strong: rgba(148, 163, 184, 0.22);
+  --brand-foreground: #0f172a;
+  --brand-muted-text: #cbd5e1;
+}
+
+/* ============ TEXT SIZE SETTINGS ============ */
+html[data-font="sm"] { font-size: 15px; }
+html[data-font="md"] { font-size: 16.5px; }
+html[data-font="lg"] { font-size: 18px; }
+html[data-font="xl"] { font-size: 19.5px; }
 
 @layer base {
   * {
@@ -118,8 +228,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
   }
 }
+
+/* ============ BRAND UTILITY CLASSES ============ */
+.brand-bg { background-color: var(--brand); }
+.brand-bg-strong { background-color: var(--brand-strong); }
+.brand-text { color: var(--brand); }
+.brand-text-strong { color: var(--brand-strong); }
+html.dark .brand-text { color: var(--brand-strong); }
+html.dark .brand-bg { background-color: var(--brand); }
+.brand-fg { color: var(--brand-foreground); }
+.brand-border { border-color: var(--brand); }
+.border-brand-soft { border-color: var(--brand-soft-strong); }
+.brand-soft-bg { background-color: var(--brand-soft); }
+.brand-soft-bg-strong { background-color: var(--brand-soft-strong); }
+.brand-muted-text { color: var(--brand-muted-text); }
+.brand-gradient { background-image: linear-gradient(to bottom, var(--brand-header-tint), transparent); }
+.brand-ring:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.hover-brand-soft:hover { background-color: var(--brand-soft); color: var(--brand-muted-text); }
 
 /* RTL-friendly tweaks */
 html[dir="rtl"] body {
@@ -142,12 +270,28 @@ html[dir="rtl"] body {
   background-color: rgb(100 116 139 / 0.7);
 }
 
-/* Touch-friendly tap targets on mobile */
+/* Touch-friendly tap targets on mobile (Apple HIG: 44px) */
 @media (max-width: 640px) {
-  button, [role="button"], a {
-    min-height: 36px;
+  button, [role="button"], a, select, [role="combobox"] {
+    min-height: 44px;
+  }
+  input, textarea {
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
   }
 }
+
+/* Horizontal chip scroller (mobile sample cases) */
+.chip-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chip-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe-area helpers for notched phones */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.mb-safe { margin-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* Print styles for PDF export */
 @media print {
@@ -180,7 +324,20 @@ html[dir="rtl"] body {
   .bg-slate-50\/60,
   .bg-emerald-50,
   .bg-amber-50,
-  .bg-slate-50 {
+  .bg-slate-50,
+  .brand-soft-bg,
+  .brand-soft-bg-strong {
     background: white !important;
+  }
+  .brand-text, .brand-bg { color: #047857 !important; background-color: transparent !important; }
+  .brand-bg-strong { background-color: #047857 !important; color: white !important; }
+}
+
+/* Respect users who prefer less motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
