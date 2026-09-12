@@ -866,11 +866,11 @@ const MOCK_RULES: MockRule[] = [
     confidence: 0.85,
   },
   {
-    keywords: ["on the stairs", "from the stairs", "staircase", "steps"],
-    code: "W10.XXX{ENC}",
-    description: "Fall on and from stairs and steps, {ENC_DESC} encounter",
+    keywords: ["on the stairs", "from the stairs", "staircase", "stairs", "steps"],
+    code: "W10.8XX{ENC}",
+    description: "Fall on and from other stairs and steps, {ENC_DESC} encounter",
     level: "tertiary",
-    rationale: "External cause — fall on and from stairs and steps.",
+    rationale: "External cause — fall on and from other stairs and steps (FY2026: the W10 family has no generic subcode; W10.8 covers other stairs and steps).",
     requires_seventh_char: true,
     default_seventh_char: "A",
     confidence: 0.85,
@@ -966,24 +966,34 @@ const MOCK_RULES: MockRule[] = [
     confidence: 0.8,
   },
   {
-    keywords: ["snake bite", "snakebit"],
-    code: "X20.XXX{ENC}",
-    description: "Contact with and (suspected) exposure to venomous snakes and lizards, {ENC_DESC} encounter",
-    level: "tertiary",
-    rationale: "External cause — venomous snake contact.",
+    keywords: ["snake bite", "snakebit", "venomous snake"],
+    code: "T63.001{ENC}",
+    description: "Toxic effect of unspecified snake venom, accidental (unintentional), {ENC_DESC} encounter",
+    level: "primary",
+    rationale: "Toxic effect of venomous snake contact — T63.0- (FY2026: chapter 20 has no venomous-contact external causes; the T63 toxic-effect code is the diagnosis). Coded accidental (unintentional); adjust the intent character if documentation differs.",
     requires_seventh_char: true,
     default_seventh_char: "A",
     confidence: 0.85,
   },
   {
-    keywords: ["bee sting", "wasp sting", "hornet sting"],
-    code: "X23.XXX{ENC}",
-    description: "Contact with and (suspected) exposure to hornets, wasps and bees, {ENC_DESC} encounter",
-    level: "tertiary",
-    rationale: "External cause — hornet/wasp/bee contact.",
+    keywords: ["spider bite", "bitten by spider", "black widow", "brown recluse"],
+    code: "T63.301{ENC}",
+    description: "Toxic effect of venom of spiders, accidental (unintentional), {ENC_DESC} encounter",
+    level: "primary",
+    rationale: "Toxic effect of venomous spider contact — T63.3- (FY2026: chapter 20 has no venomous-contact external causes). Coded accidental (unintentional); adjust the intent character if documentation differs.",
     requires_seventh_char: true,
     default_seventh_char: "A",
-    confidence: 0.82,
+    confidence: 0.85,
+  },
+  {
+    keywords: ["bee sting", "wasp sting", "hornet sting", "stung by bee", "stung by wasp"],
+    code: "T63.411{ENC}",
+    description: "Toxic effect of venom of hornets, wasps and bees, accidental (unintentional), {ENC_DESC} encounter",
+    level: "primary",
+    rationale: "Toxic effect of hornet/wasp/bee venom — T63.4- (FY2026: chapter 20 has no venomous-contact external causes). Coded accidental (unintentional); adjust the intent character if documentation differs (anaphylactic reaction coding T78.2- pairs as secondary when documented).",
+    requires_seventh_char: true,
+    default_seventh_char: "A",
+    confidence: 0.85,
   },
   {
     keywords: ["cat bite", "cat scratch", "scratched by cat"],
@@ -1015,16 +1025,11 @@ const MOCK_RULES: MockRule[] = [
     default_seventh_char: "A",
     confidence: 0.72,
   },
-  {
-    keywords: ["overdose", "poisoning", "ingested", "swallowed"],
-    code: "X44.XXX{ENC}",
-    description: "Accidental poisoning by and exposure to other and unspecified drugs, {ENC_DESC} encounter",
-    level: "tertiary",
-    rationale: "External cause — accidental poisoning by unspecified drugs (X40-X49 refinement per agent).",
-    requires_seventh_char: true,
-    default_seventh_char: "A",
-    confidence: 0.75,
-  },
+  // v0.8.2: the generic X44 accidental-poisoning external-cause rule was
+  // REMOVED — the X40-X49 range does not exist in the official FY2026
+  // classification. Poisoning intent is carried by the T36-T50 code itself
+  // (see 4f and src/lib/icd/poisoning-intent.ts); detectPoisoningIntent
+  // supplies the intent-specific T-code as primary.
   {
     keywords: ["electrocution", "electric shock"],
     code: "W86.XXX{ENC}",
@@ -1355,9 +1360,10 @@ function dedupeFamily(codes: { code: string; specificity: number }[], family: (c
 }
 
 function familyOf(code: string): string {
-  // E11.621 -> E11 ; I12.9 -> I12 ; S81.811A -> S81.81
-  const m = code.match(/^([A-Z]\d{2})(\.\d+)?/);
-  return m ? m[1] : code;
+  // E11.621 -> E11 ; I12.9 -> I12 ; S81.811A -> S81.81 ; QA00101 -> QA0
+  // (QA* = FY2026 letter-at-position-2 family, chapter 17 Q00-QA0)
+  const m = code.match(/^(?:[A-Z]\d{2}|QA\d)(\.\d+)?/);
+  return m ? m[0].split(".")[0] : code;
 }
 
 // =========================================================================
@@ -1616,35 +1622,25 @@ export const mockProvider: LLMProvider = {
       };
     }
 
-    // --- 4f. Poisoning intent restructure (Sprint 4, idea P) — I.C.19.e:
-    // the poisoning T-code carrying the DOCUMENTED intent becomes the
-    // primary diagnosis (code first the poisoning), and the external-cause
-    // code with the SAME intent is supplemental. Undocumented intent codes
-    // as UNDETERMINED, never as accidental.
+    // --- 4f. Poisoning intent restructure (Sprint 4, idea P; v0.8.2 realign) —
+    // I.C.19.e: the poisoning T-code carrying the DOCUMENTED intent becomes the
+    // primary diagnosis. The intent-bearing T-code IS the external-cause coding
+    // for poisonings in the official FY2026 classification (the X40-X49 /
+    // X60-X69 / Y10-Y19 ranges do not exist in the published CM — the FY2026
+    // External-Cause Index routes "noxious substance" to the Table of Drugs and
+    // Chemicals). Place (Y92.-) / activity (Y93.-) / status (Y99.-) remain the
+    // only chapter-20 supplements for poisoning events.
     let poisonTertiary: ICDCodeDetail | null = null;
     if (poison) {
       primaryDetail = {
         code: poison.tcode,
         description: poison.tdesc,
-        rationale: `Poisoning encounter — coded FIRST per ICD-10-CM Official Guidelines I.C.19.e with the documented intent (${poison.intentLabel}${poison.cue ? `, cue: "${poison.cue}"` : ", not documented in the note — intent coded as undetermined"}). The external-cause code ${poison.extCode} carries the same intent.`,
+        rationale: `Poisoning encounter — coded FIRST per ICD-10-CM Official Guidelines I.C.19.e with the documented intent (${poison.intentLabel}${poison.cue ? `, cue: "${poison.cue}"` : ", not documented in the note — intent coded as undetermined"}). The intent character of the T-code is the external-cause coding for poisonings; add Y92.-/Y93.-/Y99.- supplements when place/activity/status are documented.`,
         confidence: 0.86,
         laterality: "not_applicable",
         acuity: "acute",
         seventh_character: "not_required",
       };
-      poisonTertiary = {
-        code: poison.extCode,
-        description: poison.extDesc,
-        rationale: `External cause matching the poisoning intent (${poison.intentLabel}) per I.C.19.e — external cause codes are supplemental and never replace the T-code as principal diagnosis.`,
-        confidence: 0.85,
-        laterality: "not_applicable",
-        acuity: "unspecified",
-        seventh_character: "not_required",
-      };
-      // Remove the generic X44 accidental-poisoning rule — its intent
-      // (accidental) would conflict with the documented intent.
-      const xi = hits.findIndex((h) => h.code === "X44.XXX{ENC}");
-      if (xi !== -1) hits.splice(xi, 1);
     }
 
     // --- 4g. Procedure-complication restructure (Sprint 5, idea K) —

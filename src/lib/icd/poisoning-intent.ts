@@ -1,5 +1,5 @@
 /**
- * Poisoning intent disambiguation (Sprint 4, Idea P).
+ * Poisoning intent disambiguation (Sprint 4, Idea P; realigned v0.8.2).
  *
  * ICD-10-CM Official Guidelines I.C.19.e: poisoning codes in T36-T50
  * carry the INTENT of the event as the 4th/5th character:
@@ -16,22 +16,29 @@
  * for a bare "overdose" — it emits X4/undetermined and the validation
  * layer nudges the coder to document intent (info-level rule).
  *
- * The matching external-cause code (chapter XX) must carry the SAME
- * intent: X44 (accidental), X64 (self-harm), X85 (assault), Y10/Y11/Y13
- * (undetermined intent — Y-family picked by drug class).
+ * External-cause chapter 20 for poisoning (v0.8.2 correction — resolves
+ * the sprint-4 "pipeline data gap" tracker): the X40-X49 / X60-X69 /
+ * Y10-Y19 / Y40-Y59 ranges are NOT a pipeline defect — they are absent
+ * from the OFFICIAL CDC FY2026 publication itself (verified against the
+ * order file, codes file, TABULAR XML and External-Cause Index XML for
+ * FY2023-FY2027, and mirrored by NLM). The FY2026 External-Cause Index
+ * routes "noxious substance" to the Table of Drugs and Chemicals, i.e.
+ * the T36-T50 code with its intent character IS the external-cause
+ * coding; place (Y92.-) / activity (Y93.-) / status (Y99.-) supplements
+ * remain available. This engine therefore emits ONLY the intent-bearing
+ * T-code and no X/Y poisoning external cause.
  *
- * FY2026 dataset note (verified against the bundled public/icd10cm/ DB):
- * intent encodings differ per agent family —
+ * FY2026 intent encodings differ per agent family —
  *   T39.1X1-4A  acetaminophen      (X placeholder + intent digit)
  *   T39.011-014A aspirin           (intent as 3rd digit)
  *   T39.311-314A ibuprofen family  (intent as 3rd digit)
  *   T39.91-94XA unspecified NSAID  (intent as 2nd digit, X placeholder)
  *   T40.1X / T40.2X / T40.3X / T40.5X1-4A heroin/opioids/methadone/cocaine
  *   T50.901-904A unspecified drugs (intent as 3rd digit)
- * The X40-X49/X60-X69/Y10-Y19 external-cause codes are NOT present in the
- * bundled FY2026 order-file extract (pipeline data gap, tracked separately);
- * external causes are therefore emitted as fixed template strings,
- * consistent with the pre-existing X44.XXXA rule behavior.
+ * FY2024+ restructure (verified FY2026): fentanyl moved to T40.41- and
+ * tramadol to T40.42- — intent is the LAST digit (T40.411A fentanyl
+ * accidental/initial, T40.412A self-harm, ...). This engine therefore
+ * never codes fentanyl/tramadol as T40.2 "other opioids".
  */
 
 export type PoisoningIntent = "accidental" | "self_harm" | "assault" | "undetermined";
@@ -48,9 +55,6 @@ export interface PoisoningIntentResult {
   /** Poisoning T-code with documented intent, initial encounter. */
   tcode: string;
   tdesc: string;
-  /** External-cause code carrying the SAME intent. */
-  extCode: string;
-  extDesc: string;
 }
 
 export type PresentFn = (keyword: string) => boolean;
@@ -106,9 +110,6 @@ interface AgentRule {
   /** Build the initial-encounter poisoning code for an intent digit. */
   build: (digit: string) => string;
   agentDesc: string;
-  /** Y-family for undetermined-intent external cause. */
-  yCode: string;
-  yDesc: string;
 }
 
 const AGENT_RULES: AgentRule[] = [
@@ -117,92 +118,71 @@ const AGENT_RULES: AgentRule[] = [
     aliases: ["acetaminophen", "tylenol", "paracetamol"],
     build: (d) => `T39.1X${d}A`,
     agentDesc: "Poisoning by 4-aminophenol derivatives (acetaminophen)",
-    yCode: "Y10.XXXA",
-    yDesc: "Poisoning by and exposure to nonopioid analgesics, antipyretics and antirheumatics, undetermined intent",
   },
   {
     id: "aspirin",
     aliases: ["aspirin", "salicylate", "asasa"],
     build: (d) => `T39.01${d}A`,
     agentDesc: "Poisoning by aspirin (salicylates)",
-    yCode: "Y10.XXXA",
-    yDesc: "Poisoning by and exposure to nonopioid analgesics, antipyretics and antirheumatics, undetermined intent",
   },
   {
     id: "propionic-acid",
     aliases: ["ibuprofen", "advil", "motrin", "naproxen", "aleve", "naprosyn", "ketoprofen"],
     build: (d) => `T39.31${d}A`,
     agentDesc: "Poisoning by propionic acid derivatives (ibuprofen/naproxen)",
-    yCode: "Y10.XXXA",
-    yDesc: "Poisoning by and exposure to nonopioid analgesics, antipyretics and antirheumatics, undetermined intent",
   },
   {
     id: "nsaid-unspecified",
     aliases: ["nsaid", "diclofenac", "voltaren", "celecoxib", "celebrex", "meloxicam", "mobic", "indomethacin", "piroxicam", "etodolac"],
     build: (d) => `T39.9${d}XA`,
     agentDesc: "Poisoning by unspecified nonopioid analgesics, antipyretics and antirheumatics (NSAID)",
-    yCode: "Y10.XXXA",
-    yDesc: "Poisoning by and exposure to nonopioid analgesics, antipyretics and antirheumatics, undetermined intent",
+  },
+  {
+    id: "fentanyl",
+    aliases: ["fentanyl", "fentanyl analog"],
+    build: (d) => `T40.41${d}A`,
+    agentDesc: "Poisoning by fentanyl or fentanyl analogs",
+  },
+  {
+    id: "tramadol",
+    aliases: ["tramadol", "ultram"],
+    build: (d) => `T40.42${d}A`,
+    agentDesc: "Poisoning by tramadol",
   },
   {
     id: "heroin",
     aliases: ["heroin"],
     build: (d) => `T40.1X${d}A`,
     agentDesc: "Poisoning by heroin",
-    yCode: "Y11.XXXA",
-    yDesc: "Poisoning by and exposure to narcotics and psychodysleptics, undetermined intent",
   },
   {
     id: "methadone",
     aliases: ["methadone", "dolophine"],
     build: (d) => `T40.3X${d}A`,
     agentDesc: "Poisoning by methadone",
-    yCode: "Y11.XXXA",
-    yDesc: "Poisoning by and exposure to narcotics and psychodysleptics, undetermined intent",
   },
   {
     id: "opioids",
     aliases: [
       "opioid", "opiate", "opioids", "morphine", "oxycodone", "oxycontin", "hydrocodone",
-      "hydromorphone", "fentanyl", "tramadol", "percocet", "vicodin", "dilaudid", "codeine",
+      "hydromorphone", "percocet", "vicodin", "dilaudid", "codeine",
     ],
     build: (d) => `T40.2X${d}A`,
     agentDesc: "Poisoning by other opioids",
-    yCode: "Y11.XXXA",
-    yDesc: "Poisoning by and exposure to narcotics and psychodysleptics, undetermined intent",
   },
   {
     id: "cocaine",
     aliases: ["cocaine", "crack cocaine"],
     build: (d) => `T40.5X${d}A`,
     agentDesc: "Poisoning by cocaine",
-    yCode: "Y11.XXXA",
-    yDesc: "Poisoning by and exposure to narcotics and psychodysleptics, undetermined intent",
   },
   {
     id: "unspecified-drugs",
     aliases: ["unknown pills", "unknown medication", "unknown medications", "unknown drugs", "unknown substance", "unknown tablets", "pills", "tablets", "medications", "prescription drugs"],
     build: (d) => `T50.90${d}A`,
     agentDesc: "Poisoning by unspecified drugs, medicaments and biological substances",
-    yCode: "Y13.XXXA",
-    yDesc: "Poisoning by and exposure to other and unspecified drugs, medicaments and biological substances, undetermined intent",
   },
 ];
-
-const EXT_BY_INTENT: Record<"1" | "2" | "3", { code: string; desc: string }> = {
-  "1": {
-    code: "X44.XXXA",
-    desc: "Accidental poisoning by and exposure to other and unspecified drugs, initial encounter",
-  },
-  "2": {
-    code: "X64.XXXA",
-    desc: "Intentional self-harm by other and unspecified drugs, initial encounter",
-  },
-  "3": {
-    code: "X85.XXXA",
-    desc: "Assault by other and unspecified drugs, initial encounter",
-  },
-};
 
 function aliasPresent(t: string, alias: string): boolean {
   const re = new RegExp(`\\b${alias.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`, "i");
@@ -259,10 +239,6 @@ export function detectPoisoningIntent(
   const rule = agentRule ?? AGENT_RULES[AGENT_RULES.length - 1];
   const tcode = rule.build(intent.digit);
   const tdesc = `${rule.agentDesc}, ${intent.label}, initial encounter`;
-  const ext =
-    intent.digit === "4"
-      ? { code: rule.yCode, desc: rule.yDesc }
-      : EXT_BY_INTENT[intent.digit];
 
   return {
     intent: intent.intent,
@@ -272,7 +248,5 @@ export function detectPoisoningIntent(
     agent: agentAlias,
     tcode,
     tdesc,
-    extCode: ext.code,
-    extDesc: ext.desc,
   };
 }

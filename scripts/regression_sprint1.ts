@@ -81,7 +81,7 @@ async function main() {
     check("S52.502A primary (left wrist)", r.primary_icd10.code === "S52.502A", r.primary_icd10.code);
     check("M17.0 bilateral OA secondary", r.secondary_icd10.some((c) => c.code === "M17.0"), r.secondary_icd10.map((c) => c.code).join(","));
     check("D64.9 anemia secondary", r.secondary_icd10.some((c) => c.code === "D64.9"));
-    check("W10.XXXA stairs tertiary", r.tertiary_icd10.some((c) => c.code === "W10.XXXA"), r.tertiary_icd10.map((c) => c.code).join(","));
+    check("W10.8XXA stairs tertiary", r.tertiary_icd10.some((c) => c.code === "W10.8XXA"), r.tertiary_icd10.map((c) => c.code).join(","));
     check("Y92.008 home tertiary", r.tertiary_icd10.some((c) => c.code === "Y92.008"));
   });
 

@@ -63,17 +63,33 @@ async function unzip(zipPath, destDir) {
   await execFileP("python3", ["-c", `import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])`, zipPath, destDir]);
 }
 
-/** Parse the fixed-width order file. */
+/**
+ * Parse the fixed-width order file.
+ *
+ * Code shape: FY2026 introduced the first letter-at-position-2 codes — the
+ * QA0* neurodevelopmental-genetic family that extends chapter 17 to
+ * "(Q00-QA0)". The shape regex therefore accepts a letter OR digit in the
+ * second position; the previous /^[A-Z]\d.../ silently dropped all 20 QA*
+ * lines (13 billable) from the bundled extract (v0.8.2 data pass fix).
+ */
 function parseOrderFile(text) {
   const entries = [];
+  let dropped = 0;
   for (const line of text.split(/\r?\n/)) {
     if (!line || line.length < 20) continue;
     const order = line.slice(0, 5).trim();
     const raw = line.slice(6, 13).trim();
     const flag = line.slice(14, 15).trim() === "1" ? 1 : 0;
     const short = line.slice(16, 77).trim();
-    if (!/^[A-Z]\d[\dA-Z]*$/.test(raw)) continue;
+    if (!/^[A-Z][A-Z0-9][\dA-Z]*$/.test(raw)) {
+      dropped++;
+      console.warn(`[fetch-icd10cm] dropped line (unparseable code field): order=${order} raw="${raw}" desc="${short}"`);
+      continue;
+    }
     entries.push({ order, code: dotted(raw), flag, desc: short });
+  }
+  if (dropped > 0) {
+    console.warn(`[fetch-icd10cm] WARNING: ${dropped} order-file line(s) dropped by the code-shape filter — inspect before shipping`);
   }
   // The file is already in tabular order; keep that order (it equals code order)
   return entries;

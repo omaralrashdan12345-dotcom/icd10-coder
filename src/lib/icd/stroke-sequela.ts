@@ -14,12 +14,16 @@
  *       then I69.354 (hemiplegia/hemiparesis following cerebral infarction
  *            affecting left non-dominant side).
  *
- * FY2026 dataset note (verified against the bundled public/icd10cm/ DB):
+ * FY2026 dataset note (verified against the bundled public/icd10cm/ DB and
+ * the official FY2024-FY2027 CDC order files, v0.8.2 data pass):
  * the I69.4- family ("sequelae of stroke, not specified as hemorrhage or
- * infarction") is NOT present in the FY2026 order file — the family jumps
- * from I69.3- to I69.8-. Strokes documented only as "stroke/CVA" (type
- * unspecified) therefore map to the I69.9- family (sequelae of
- * unspecified cerebrovascular disease), NEVER to I69.4-.
+ * infarction") AND the I64.9 underlying code ("Stroke, not specified as
+ * hemorrhage or infarction") were RETIRED from the ICD-10-CM classification
+ * (FY2024 release; both are absent from the official FY2024-FY2027 order
+ * files). Strokes documented only as "stroke/CVA" (type unspecified) are
+ * therefore coded as cerebral infarction, unspecified (I63.9) — the
+ * official FY2024+ replacement — with residuals taken from the I69.3-
+ * family, NEVER from I69.4-.
  *
  * Dominance convention (verified FY2026 descriptions, x5 ladders):
  *   .x51 affecting right dominant side
@@ -41,7 +45,7 @@ export interface StrokeResidualHit {
 }
 
 export interface StrokeSequelaResult {
-  /** Underlying cerebrovascular condition code (I60.-/I61.-/I62.-/I63.-/I64.-). */
+  /** Underlying cerebrovascular condition code (I60.-/I61.-/I62.-/I63.-). */
   underlyingCode: string;
   underlyingDescription: string;
   /** The I69 family matching the underlying type, e.g. "I69.3". */
@@ -62,7 +66,7 @@ interface FamilyLayout {
   typeLabel: string;
 }
 
-/** Underlying-code -> I69-family mapping per FY2026 (I69.4- retired from dataset). */
+/** Underlying-code -> I69-family mapping per FY2026 (I64.9 and I69.4- retired from the classification). */
 const FAMILY_BY_TYPE: Record<StrokeType, FamilyLayout> = {
   sah: {
     underlyingCode: "I60.9",
@@ -89,10 +93,10 @@ const FAMILY_BY_TYPE: Record<StrokeType, FamilyLayout> = {
     typeLabel: "cerebral infarction (ischemic stroke)",
   },
   nos: {
-    underlyingCode: "I64.9",
-    underlyingDescription: "Stroke, not specified as hemorrhage or infarction",
-    i69Family: "I69.9",
-    typeLabel: "unspecified stroke",
+    underlyingCode: "I63.9",
+    underlyingDescription: "Cerebral infarction, unspecified",
+    i69Family: "I69.3",
+    typeLabel: "unspecified stroke (coded as cerebral infarction — I64.9 retired from the classification in FY2024)",
   },
 };
 

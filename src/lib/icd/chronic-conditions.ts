@@ -236,7 +236,8 @@ export const CHRONIC_CONDITION_MATCHERS: ChronicConditionMatcher[] = [
     label_en: "Anemia",
     label_ar: "فقر الدم",
     keywords: ["anemia", "anaemia", "low hemoglobin", "low hb", "iron deficiency"],
-    code_prefixes: ["D50", "D51", "D52", "D53", "D54", "D55", "D56", "D57", "D58", "D59", "D60", "D61", "D62", "D63", "D64"],
+    // D54 absent from the official FY2026 classification (v0.8.2 data pass)
+    code_prefixes: ["D50", "D51", "D52", "D53", "D55", "D56", "D57", "D58", "D59", "D60", "D61", "D62", "D63", "D64"],
     default_code: "D64.9",
     description: "Anemia, unspecified",
     refine: (note) => {
@@ -283,7 +284,8 @@ export const CHRONIC_CONDITION_MATCHERS: ChronicConditionMatcher[] = [
     label_en: "Osteoporosis",
     label_ar: "هشاشة العظام",
     keywords: ["osteoporosis", "low bone density", "osteopenia"],
-    code_prefixes: ["M80", "M81", "M82"],
+    // M82 absent from the official FY2026 classification (v0.8.2 data pass)
+    code_prefixes: ["M80", "M81"],
     default_code: "M81.80",
     description: "Other osteoporosis without current pathological fracture, unspecified site",
     specificity: 7,

@@ -37,7 +37,6 @@ export const BUILTIN_ICD10: ICDEntry[] = [
     // Bites / contact with animals
     ["W55.01XA", "Bitten by cat, initial encounter", 1],
     ["W55.01XD", "Bitten by cat, subsequent encounter", 1],
-    ["W55.02XA", "Struck by cat, initial encounter", 1],
     ["W55.03XA", "Other contact with cat, initial encounter", 1],
     ["W55.03XD", "Other contact with cat, subsequent encounter", 1],
     ["W55.03XS", "Other contact with cat, sequela", 1],
@@ -53,7 +52,7 @@ export const BUILTIN_ICD10: ICDEntry[] = [
     ["W01.XXXA", "Fall on same level from slipping, tripping and stumbling without subsequent striking against object, initial encounter", 1],
     ["W01.XXXD", "Fall on same level from slipping, tripping and stumbling, subsequent encounter", 1],
     ["W18.XXXA", "Other fall on the same level, initial encounter", 1],
-    ["W10.XXXA", "Fall on and from stairs and steps, initial encounter", 1],
+    ["W10.8XXA", "Fall on and from other stairs and steps, initial encounter", 1],
     ["W11.XXXA", "Fall on and from ladder, initial encounter", 1],
     ["W17.XXXA", "Other fall from one level to another, initial encounter", 1],
     ["W06.XXXA", "Fall from bed, initial encounter", 1],
@@ -83,17 +82,15 @@ export const BUILTIN_ICD10: ICDEntry[] = [
     ["X31.XXXA", "Exposure to excessive natural cold, initial encounter", 1],
     ["W85.XXXA", "Exposure to electric transmission lines and cables, initial encounter", 1],
     ["W86.XXXA", "Exposure to other specified electric current, initial encounter", 1],
-    // Venomous / poisoning
-    ["X20.XXXA", "Contact with and (suspected) exposure to venomous snakes and lizards, initial encounter", 1],
-    ["X21.XXXA", "Contact with and (suspected) exposure to venomous spiders, initial encounter", 1],
-    ["X23.XXXA", "Contact with and (suspected) exposure to hornets, wasps and bees, initial encounter", 1],
-    ["X40.XXXA", "Accidental poisoning by and exposure to nonopioid analgesics, antipyretics and antirheumatics, initial encounter", 1],
-    ["X41.XXXA", "Accidental poisoning by and exposure to antiepileptic and sedative-hypnotic drugs, initial encounter", 1],
-    ["X42.XXXA", "Accidental poisoning by and exposure to narcotics and psychodysleptics, initial encounter", 1],
-    ["X44.XXXA", "Accidental poisoning by and exposure to other and unspecified drugs, medicaments and biological substances, initial encounter", 1],
-    ["X45.XXXA", "Accidental poisoning by and exposure to alcohol, initial encounter", 1],
-    ["X49.XXXA", "Accidental poisoning by and exposure to other and unspecified chemicals, initial encounter", 1],
-    ["X59.XXXA", "Exposure to unspecified factor, initial encounter", 1],
+    // v0.8.2 (CDC FY2026 data pass): the X20-X29 (venomous contact),
+    // X40-X49 (accidental poisoning), X60-X69 and Y10-Y19 ranges are NOT
+    // missing from this curated list by omission — they do not exist in the
+    // official CDC FY2026 publication (order file, codes file, tabular and
+    // external-cause index all verified). Venomous contact is coded with
+    // T63.- toxic effects and poisoning with intent-bearing T36-T50 codes.
+    ["T63.001A", "Toxic effect of unspecified snake venom, accidental (unintentional), initial encounter", 1],
+    ["T63.301A", "Toxic effect of venom of spiders, accidental (unintentional), initial encounter", 1],
+    ["T63.411A", "Toxic effect of venom of hornets, wasps and bees, accidental (unintentional), initial encounter", 1],
     // Assault / other
     ["X99.XXXA", "Assault by sharp object, initial encounter", 1],
     ["Y08.XXXA", "Assault by other specified means, initial encounter", 1],
@@ -196,11 +193,11 @@ export const BUILTIN_ICD10: ICDEntry[] = [
     ["T39.011A", "Poisoning by salicylates, accidental, initial encounter", 1],
     ["T39.1X1A", "Poisoning by 4-aminophenol derivatives (acetaminophen), accidental, initial encounter", 1],
     ["T40.1X1A", "Poisoning by heroin, accidental, initial encounter", 1],
-    ["T40.4X1A", "Poisoning by other synthetic narcotics, accidental, initial encounter", 1],
+    ["T40.411A", "Poisoning by fentanyl or fentanyl analogs, accidental (unintentional), initial encounter", 1],
     ["T42.4X1A", "Poisoning by benzodiazepines, accidental, initial encounter", 1],
-    ["T43.22X1A", "Poisoning by selective serotonin reuptake inhibitors, accidental, initial encounter", 1],
-    ["T50.9X1A", "Poisoning by other and unspecified drugs, medicaments and biological substances, accidental, initial encounter", 1],
-    ["T58.XX1A", "Toxic effect of carbon monoxide, accidental, initial encounter", 1],
+    ["T43.211A", "Poisoning by selective serotonin and norepinephrine reuptake inhibitors, accidental (unintentional), initial encounter", 1],
+    ["T50.901A", "Poisoning by other and unspecified drugs, medicaments and biological substances, accidental, initial encounter", 1],
+    ["T58.91XA", "Toxic effect of carbon monoxide from unspecified source, accidental (unintentional), initial encounter", 1],
     ["T81.40XA", "Infection following a procedure, initial encounter", 1],
   ]),
 
@@ -216,7 +213,6 @@ export const BUILTIN_ICD10: ICDEntry[] = [
     ["B01.9", "Varicella without complication"],
     ["B18.9", "Unspecified viral hepatitis without hepatic coma"],
     ["B20", "Human immunodeficiency virus [HIV] disease"],
-    ["B21", "Human immunodeficiency virus disease resulting in infectious and parasitic diseases"],
     ["B34.9", "Viral infection, unspecified"],
     ["B35.4", "Tinea corporis"],
     ["B95.4", "Streptococcus, group A, as the cause of diseases classified elsewhere"],
@@ -607,8 +603,8 @@ export const CODE_FIRST_RULES: CodeFirstRule[] = [
   },
   {
     rule_id: "POISONING_EXTERNAL_CAUSE",
-    description_en: "For poisoning (T36-T50), code the poisoning FIRST, then add the external cause code (X40-X49, etc.) with 7th character.",
-    description_ar: "في حالات التسمم (T36-T50)، يُرمز التسمم أولاً ثم يُضاف رمز السبب الخارجي (X40-X49) مع الحرف السابع.",
+    description_en: "For poisoning (T36-T50), the T-code's intent character IS the external-cause coding (accidental/self-harm/assault/undetermined); add Y92.-/Y93.-/Y99.- supplements for place/activity/status when documented. (FY2026: the X40-X49/X60-X69/Y10-Y19 chapter-20 ranges do not exist in the official classification.)",
+    description_ar: "في حالات التسمم (T36-T50)، يحمل رمز التسمم نفسه رمز السبب الخارجي عبر محرف النية؛ يمكن إضافة Y92/Y93/Y99 للمكان والنشاط والحالة عند توثيقها.",
     trigger_codes: ["T36", "T37", "T38", "T39", "T40", "T41", "T42", "T43", "T44", "T45", "T46", "T47", "T48", "T49", "T50"],
     companion_codes: [],
     pattern_keywords: ["poisoning", "overdose", "intoxication", "ingested"],
@@ -660,20 +656,23 @@ export const CODE_FIRST_RULES: CodeFirstRule[] = [
   },
   {
     rule_id: "DIABETIC_NEPHROPATHY_CODE_FIRST",
-    description_en: "Diabetic nephropathy (E11.21 / E10.21 / E13.21) requires the underlying kidney condition (N18.- or N08.-) coded first.",
-    description_ar: "اعتلال الكلية السكري (E11.21) يتطلب رمز الحالة الكلوية الأساسية (N18.- أو N08.-) ويُرمز أولاً.",
+    description_en: "Diabetic nephropathy (E11.21 / E10.21 / E13.21) requires the underlying chronic kidney disease (N18.-) coded first. (v0.8.2: N08.3 glomerulopathy-in-diabetes is retired from the classification — the E1x.21 combo code covers it.)",
+    description_ar: "اعتلال الكلية السكري (E11.21) يتطلب رمز الكلية المزمنة الأساسية (N18.-) ويُرمز أولاً.",
     trigger_codes: ["E11.21", "E10.21", "E13.21"],
-    companion_codes: ["N18.9", "N18.6", "N18.5", "N18.4", "N18.3", "N08.3"],
-    code_first_codes: ["N18", "N08"],
+    companion_codes: ["N18.9", "N18.6", "N18.5", "N18.4", "N18.3"],
+    code_first_codes: ["N18"],
     pattern_keywords: ["diabetic nephropathy", "diabetes with nephropathy"],
   },
   {
     rule_id: "DIABETIC_RETINOPATHY_CODE_FIRST",
-    description_en: "Diabetic retinopathy codes (E11.31-, E10.31-, E13.31-) require the specific retinopathy H36.0- coded first.",
-    description_ar: "رموز اعتلال الشبكية السكري (E11.31-) تتطلب رمز اعتلال الشبكية النوعي H36.0- ويُرمز أولاً.",
+    // v0.8.2: H36.0 (diabetic retinopathy code-first anchor) is retired from
+    // the classification — the E1x.31x combo codes themselves specify the
+    // retinopathy type, so no separate H36.0- code-first requirement remains.
+    description_en: "Diabetic retinopathy codes (E11.31-, E10.31-, E13.31-) include the retinopathy type in the combo code itself (H36.0- was retired from the classification); no separate code-first requirement remains.",
+    description_ar: "رموز اعتلال الشبكية السكري (E11.31-) تتضمن نوع اعتلال الشبكية داخل الرمز المركب نفسه؛ لا يلزم رمز إضافي مُرمز أولاً.",
     trigger_codes: ["E11.31", "E10.31", "E13.31"],
-    companion_codes: ["H36.0"],
-    code_first_codes: ["H36.0"],
+    companion_codes: [],
+    code_first_codes: [],
     pattern_keywords: ["diabetic retinopathy", "diabetes with retinopathy"],
   },
   {
@@ -718,7 +717,7 @@ export const CODE_FIRST_RULES: CodeFirstRule[] = [
     description_ar: "متلازات ما بعد الجلطة الدماغية (I69.-) تتطلب رمز الحالة الدماغية الأساسية (I60-I67) ويُرمز أولاً.",
     trigger_codes: ["I69"],
     companion_codes: ["I63", "I60", "I61", "I62", "I65", "I66", "I67"],
-    code_first_codes: ["I60", "I61", "I62", "I63", "I64", "I65", "I66", "I67"],
+    code_first_codes: ["I60", "I61", "I62", "I63", "I65", "I66", "I67"],
     pattern_keywords: ["sequelae of stroke", "sequela of stroke", "residual deficits from stroke", "old stroke with", "history of stroke with residual"],
   },
   {

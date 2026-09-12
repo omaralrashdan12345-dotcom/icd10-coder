@@ -445,7 +445,9 @@ export async function refreshFromNlmLive(): Promise<void> {
     for (const [code, name] of all) {
       if (typeof code !== "string" || typeof name !== "string") continue;
       const c = normCode(code);
-      if (!/^[A-Z]\d[\dA-Z.]*$/.test(c) || seen.has(c)) continue;
+      // Shape accepts letter-at-position-2 codes (FY2026 QA0* family — see
+      // scripts/fetch-icd10cm.mjs parseOrderFile note).
+      if (!/^[A-Z][A-Z0-9][\dA-Z.]*$/.test(c) || seen.has(c)) continue;
       seen.add(c);
       entries.push([c, name.trim()]);
     }
@@ -556,7 +558,8 @@ export async function searchFullDb(query: string, limit = 10): Promise<FullDbSea
   const results = new Map<number, number>();
   const directPrefixes: number[] = [];
 
-  if (/^[A-Z]\d/i.test(q)) {
+  // Code-like: classic letter+digit start, or the FY2026 QA* double-letter family.
+  if (/^(?:[A-Z]\d|QA)/i.test(q)) {
     // exact
     const exactIdx = codeList.indexOf(normalized);
     if (exactIdx >= 0) results.set(exactIdx, (results.get(exactIdx) ?? 0) + 4);
