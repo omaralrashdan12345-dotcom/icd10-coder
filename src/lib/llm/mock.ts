@@ -17,6 +17,10 @@ import { detectResidualConditions, type ResidualHit } from "@/lib/icd/sequela";
 import { detectMedicationStatusCodes } from "@/lib/icd/medication-conditions";
 import { detectStrokeSequela } from "@/lib/icd/stroke-sequela";
 import { detectPoisoningIntent } from "@/lib/icd/poisoning-intent";
+import {
+  detectProcedureComplication,
+} from "@/lib/icd/procedure-complications";
+import { detectSevereSepsis } from "@/lib/icd/severe-sepsis";
 
 /**
  * Smart offline ICD-10-CM coder (v0.3).
@@ -1405,6 +1409,18 @@ export const mockProvider: LLMProvider = {
     // PRIMARY diagnosis and the intent-matched external cause is supplemental.
     const poison = detectPoisoningIntent(note, (k) => keywordPresentNotNegated(text, k));
 
+    // Sprint 5 (idea K): procedure complications — T80-T88 complications of
+    // surgical/medical care paired with their Chapter-20 external causes
+    // (Y62-Y84), per I.C.20.d. Skipped when poisoning already owns the note
+    // (mutually exclusive presentations).
+    const complication = poison ? null : detectProcedureComplication(note);
+
+    // Sprint 5 (idea L): severe-sepsis ladder — organ dysfunction / septic
+    // shock documented WITH a sepsis context requires R65.20 / R65.21
+    // secondary to the underlying infection (I.C.1.d.7/.8). SIRS without
+    // acute organ dysfunction stays plain sepsis.
+    const severeSepsis = detectSevereSepsis(text);
+
     // When I69.- late-effect codes take over, Z86.73 ("personal history of
     // TIA and cerebral infarction WITHOUT residual deficits") must NOT be
     // reported alongside them — filter it from every history source.
@@ -1618,6 +1634,50 @@ export const mockProvider: LLMProvider = {
       if (xi !== -1) hits.splice(xi, 1);
     }
 
+    // --- 4g. Procedure-complication restructure (Sprint 5, idea K) —
+    // I.C.20.d: when the encounter is FOR a complication of surgical or
+    // medical care, the complication T-code (T80-T88 block) is sequenced
+    // FIRST with its episode-of-care 7th character, and the procedure /
+    // misadventure external cause (Y62-Y84, NO 7th character in FY2026)
+    // is reported as a supplemental code.
+    let complicationTertiary: ICDCodeDetail | null = null;
+    const complicationSecondaries: ICDCodeDetail[] = [];
+    if (complication && !poison && !(strokeSeq && strokeSeq.residuals.length > 0)) {
+      const epChar = complication.tcode.slice(-1);
+      primaryDetail = {
+        code: complication.tcode,
+        description: complication.tdesc,
+        rationale: `Complication of surgical/medical care ("${complication.cue}") — sequenced FIRST per ICD-10-CM Official Guidelines I.C.20.d because the encounter is for the complication. 7th character "${epChar}" documents the episode of care. All T80-T88/Y62-Y84 codes in this response are verified rows of the bundled FY2026 extract (T81.0- hemorrhage/hematoma and the pre-2019 accidental-puncture layout are ABSENT from the extract and are therefore never emitted).`,
+        confidence: complication.confidence,
+        laterality: "not_applicable",
+        acuity: epChar === "S" ? "chronic" : "acute",
+        seventh_character: epChar as ICDCodeDetail["seventh_character"],
+      };
+      if (complication.ext) {
+        complicationTertiary = {
+          code: complication.ext.code,
+          description: complication.ext.description,
+          rationale: `External cause identifying the procedure / misadventure behind the complication per I.C.20.d — supplemental, never the principal diagnosis. Y62-Y84 codes take NO 7th character in ICD-10-CM.`,
+          confidence: 0.82,
+          laterality: "not_applicable",
+          acuity: "unspecified",
+          seventh_character: "not_required",
+        };
+      }
+      if (complication.kind === "postprocedural_sepsis") {
+        complicationSecondaries.push({
+          code: "A41.9",
+          description: "Sepsis, unspecified organism",
+          rationale:
+            "Sepsis following a procedure (T81.44) requires the causative organism to be reported when known; the note does not identify one, so the unspecified-organism sepsis code A41.9 is added (I.C.1.d).",
+          confidence: 0.8,
+          laterality: "not_applicable",
+          acuity: "acute",
+          seventh_character: "not_required",
+        });
+      }
+    }
+
     // --- 4b. Open/closed fracture 7th character (Sprint 1, Idea B-lite) ---
     // Guideline (AHIMA/CMS): a fracture NOT stated as open or closed defaults
     // to CLOSED (A) — already our template default. When the note explicitly
@@ -1742,6 +1802,10 @@ export const mockProvider: LLMProvider = {
     // so they lead the secondary list per I.C.6.a.
     for (const sd of strokeI69Secondaries) secondaryDetails.push(sd);
 
+    // 5-lead-c. Postprocedural sepsis organism placement (Sprint 5, idea K):
+    // A41.9 follows the T81.44 complication code directly.
+    for (const sd of complicationSecondaries) secondaryDetails.push(sd);
+
     // 5a. ulcer site code moves to secondary when combo primary used
     if (comboPrimary) {
       const ulcerRule = hits.find((h) => h.level === "primary" && h.code.startsWith("L97"));
@@ -1812,6 +1876,45 @@ export const mockProvider: LLMProvider = {
       });
     }
 
+    // --- 5f. Severe-sepsis ladder (Sprint 5, idea L) — I.C.1.d.7/.8: when
+    // the sepsis layer is already coded (A41.- primary/secondary or T81.44
+    // primary) and the note documents acute organ dysfunction or septic
+    // shock, R65.20/R65.21 follows the sepsis code and the organ-dysfunction
+    // codes are reported as additional secondary diagnoses. R65.2- is NEVER
+    // the principal diagnosis.
+    if (
+      severeSepsis &&
+      !primaryDetail.code.startsWith("R65") &&
+      !secondaryDetails.some((s) => s.code.startsWith("R65.2")) &&
+      (primaryDetail.code.startsWith("A41") ||
+        primaryDetail.code.startsWith("T81.4") ||
+        secondaryDetails.some((s) => s.code.startsWith("A41") || s.code.startsWith("T81.4")))
+    ) {
+      secondaryDetails.push({
+        code: severeSepsis.r65,
+        description: severeSepsis.r65Desc,
+        rationale: severeSepsis.shock
+          ? `Septic shock documented (${severeSepsis.cues.join(", ")}) — R65.21 is sequenced AFTER the underlying infection/sepsis code per I.C.1.d.8; R57.2 is retired in FY2026 and must not be used.`
+          : `Severe sepsis documented (${severeSepsis.cues.join(", ")}) — R65.20 is sequenced AFTER the underlying infection/sepsis code per I.C.1.d.7 and requires a companion acute organ-dysfunction code.`,
+        confidence: 0.85,
+        laterality: "not_applicable",
+        acuity: "acute",
+        seventh_character: "not_required",
+      });
+      for (const o of severeSepsis.organs) {
+        if (secondaryDetails.some((s) => s.code === o.code)) continue;
+        secondaryDetails.push({
+          code: o.code,
+          description: o.description,
+          rationale: `Acute organ dysfunction ("${o.id}") documented with severe sepsis — reported as an additional secondary diagnosis alongside R65.2- per I.C.1.d.7/.8.`,
+          confidence: 0.82,
+          laterality: "not_applicable",
+          acuity: "acute",
+          seventh_character: "not_required",
+        });
+      }
+    }
+
     // --- 5e. Medication-status Z-codes (Sprint 3, idea G): long-term
     // therapy (Z79.-), drug-allergy status (Z88.-) and therapeutic drug
     // level monitoring (Z51.81) are reported as secondary diagnoses when
@@ -1878,6 +1981,10 @@ export const mockProvider: LLMProvider = {
     // supplemental list (intent-matched, see section 4f).
     if (poisonTertiary) dedupedTertiary.unshift(poisonTertiary);
 
+    // --- 7c. Procedure-complication external cause (Sprint 5, idea K)
+    // leads the supplemental list (Y62-Y84, no 7th character).
+    if (complicationTertiary) dedupedTertiary.unshift(complicationTertiary);
+
     // --- 8. Dedupe secondary by exact code
     const finalSecondary = secondaryDetails.filter(
       (s, i, arr) => arr.findIndex((x) => x.code === s.code) === i
@@ -1931,6 +2038,12 @@ export const mockProvider: LLMProvider = {
           : "") +
         (poison
           ? `Poisoning coded with documented intent: ${poison.intentLabel} (I.C.19.e). `
+          : "") +
+        (complication
+          ? `Procedure complication coded with paired external cause: ${complication.label} (I.C.20.d). `
+          : "") +
+        (severeSepsis && severeSepsis.r65
+          ? `Severe-sepsis ladder applied: ${severeSepsis.r65}${severeSepsis.organs.length > 0 ? ` with ${severeSepsis.organs.length} organ-dysfunction code(s)` : ""} (I.C.1.d). `
           : "") +
         (enc === "sequela" && sequelaInjurySecondary
           ? "Sequela dual-coding applied (residual condition first, injury code with 7th character S second). "

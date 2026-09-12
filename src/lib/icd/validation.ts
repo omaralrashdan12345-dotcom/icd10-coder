@@ -27,6 +27,8 @@ import { detectEncounterType } from "./encounter";
 import { isSequelaInjuryCode, isResidualCode, detectResidualConditions } from "./sequela";
 import { detectMedicationStatusCodes } from "./medication-conditions";
 import { detectStrokeSequela } from "./stroke-sequela";
+import { isComplicationCode } from "./procedure-complications";
+import { detectSevereSepsis, isOrganDysfunctionCode } from "./severe-sepsis";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -44,7 +46,12 @@ const SEVENTH_CHAR_PREFIXES: RegExp[] = [
   /^[T](?!(30|31|32))\d{2}/, // Injury/poisoning — except T30-T32 (burn extent) which take no 7th char
   /^[W]\d/,   // External causes — most W codes take 7th char
   /^[X]\d/,   // External causes — exposure
-  /^[Y](?!(92|93|99))\d/, // External causes — except Y92/Y93/Y99 (place/activity/status: no 7th char)
+  // External causes — EXCEPT Y62-Y84 (procedural external causes: failure
+  // of sterile precautions, device families Y70-Y79, surgical procedures
+  // Y83, other medical procedures Y84 — these take NO 7th character, see
+  // Sprint 5 grounding of the bundled FY2026 extract) and Y92/Y93/Y99
+  // (place/activity/status).
+  /^[Y](?!(92|93|99|6[2-9]|7[0-9]|8[0-4]))\d/,
 ];
 
 /**
@@ -593,6 +600,127 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
           message_ar: `عدم تطابق النية: رمز التسمم ${code.code} يحمل نية "${tIntent}" بينما رمز السبب الخارجي يحمل نية مختلفة. يجب أن يوثّق رمز T ورمز السبب الخارجي النية نفسها وفق I.C.19.e.`,
           suggestion_en: `Align the intent characters of the poisoning code and its external cause (1 accidental, 2 self-harm, 3 assault, 4 undetermined).`,
           suggestion_ar: `وحّد خانة النية بين رمز التسمم والسبب الخارجي (1 عرضي، 2 إيذاء ذاتي، 3 اعتداء، 4 غير محدد).`,
+        });
+      }
+    }
+  }
+
+  // 15. Procedure complications (Sprint 5, Idea K) — Official Guidelines
+  //     I.C.20.d: a complication of surgical/medical care (T80-T88 block)
+  //     is paired with an external cause code identifying the procedure /
+  //     misadventure (Y62-Y84), and is sequenced FIRST when the encounter
+  //     is FOR the complication.
+  {
+    const compEntries = codes.filter(({ code }) => isComplicationCode(code.code));
+    if (compEntries.length > 0) {
+      const hasProceduralExt = codes.some(({ code }) =>
+        /^Y(6[2-9]|7[0-9]|8[0-4])(\.|$)/.test(code.code.toUpperCase())
+      );
+      if (!hasProceduralExt) {
+        issues.push({
+          level: "warning",
+          code: compEntries[0].code.code,
+          rule: "PROC_COMPLICATION_EXT_MISSING",
+          message_en: `Complication code ${compEntries[0].code.code} (${compEntries[0].level}) has no external cause code. Per I.C.20.d, complications of surgical and medical care are reported with an external cause code identifying the procedure or misadventure: Y62.- (failure of sterile precautions), Y70-Y79 (device families), Y83.- (surgical procedure), or Y84.- (other medical procedure). Note: Y62-Y84 codes take NO 7th character.`,
+          message_ar: `رمز المضاعفة ${compEntries[0].code.code} (${compEntries[0].level}) بلا رمز سبب خارجي. وفق I.C.20.d يجب إقران مضاعفات العناية الجراحية/الطبية برمز سبب خارجي: Y62.- (إخفاق التعقيم) أو Y70-Y79 (الأجهزة) أو Y83.- (إجراء جراحي) أو Y84.- (إجراء طبي آخر). ملاحظة: رموز Y62-Y84 بلا حرف سابع.`,
+          suggestion_en: `Add the matching external cause, e.g. Y83.9 (surgical procedure, unspecified) or the device-specific Y70-Y79 family.`,
+          suggestion_ar: `أضف السبب الخارجي المطابق، مثال: Y83.9 (إجراء جراحي غير محدد) أو فئة الأجهزة Y70-Y79.`,
+        });
+      }
+      const firstCompIdx = codes.findIndex(({ code }) => isComplicationCode(code.code));
+      const leader = codes[0];
+      const leaderAllowed =
+        firstCompIdx > 0 &&
+        /^(A4[01]|B9[56]|R65\.2|T81\.44)/.test(leader.code.code.toUpperCase());
+      if (firstCompIdx > 0 && !leaderAllowed) {
+        issues.push({
+          level: "warning",
+          code: compEntries[0].code.code,
+          rule: "PROC_COMPLICATION_ORDER",
+          message_en: `Sequencing: when the encounter is FOR the complication, the complication code must be sequenced FIRST (I.C.20.d). Currently ${leader.code.code} appears before ${compEntries[0].code.code}. Only an organism code (A40/B95-B96), the sepsis code (A41.-), or R65.2- may precede it in sepsis-related encounters.`,
+          message_ar: `الترتيب: عندما تكون الزيارة لعلاج المضاعفة يجب أن يُرمز المضاعفة أولاً (I.C.20.d). حالياً يظهر ${leader.code.code} قبل ${compEntries[0].code.code}. فقط رمز العضية (A40/B95-B96) أو رمز تسمم الدم (A41.-) أو R65.2- قد يسبقه.`,
+          suggestion_en: `Move ${compEntries[0].code.code} to the Primary position.`,
+          suggestion_ar: `انقل ${compEntries[0].code.code} إلى الموضع الرئيسي.`,
+        });
+      }
+    }
+  }
+
+  // 16. Severe-sepsis ladder (Sprint 5, Idea L) — Official Guidelines
+  //     I.C.1.d.7/.8: R65.2- is NEVER the principal diagnosis; it follows
+  //     the underlying infection/sepsis code and REQUIRES a companion acute
+  //     organ-dysfunction code. SIRS without organ dysfunction does not
+  //     meet the severe-sepsis definition.
+  {
+    const r65Entries = codes.filter(({ code }) => /^R65\.2/.test(code.code));
+    const sepsisLayerPresent = codes.some(({ code }) => /^(A4[01]|B9[56]|T81\.44)/.test(code.code.toUpperCase()));
+
+    if (r65Entries.some(({ level }) => level === "primary")) {
+      issues.push({
+        level: "error",
+        code: resp.primary_icd10.code,
+        rule: "SEPSIS_R65_PRIMARY",
+        message_en: `R65.2- (severe sepsis) is assigned as the PRIMARY diagnosis. Per I.C.1.d.7/.8, R65.2- is never the principal diagnosis — the underlying infection (or A41.- when unspecified) is coded FIRST and R65.2- follows as a secondary diagnosis.`,
+        message_ar: `الرمز R65.2- (تسمم دم شديد) مُسند كتشخيص رئيسي. وفق I.C.1.d.7/.8 لا يكون R65.2- رئيسياً أبداً — يُرمز سبب العدوى أولاً (أو A41.-) ثم يليه R65.2- كتشخيص ثانوي.`,
+        suggestion_en: `Sequence the underlying infection code first, then R65.2-, then the organ-dysfunction code(s).`,
+        suggestion_ar: `رتّب رمز العدوى الأصلية أولاً، ثم R65.2-، ثم رموز الخلل العضوي الحاد.`,
+      });
+    }
+
+    if (r65Entries.length > 0) {
+      const hasOrgan = codes.some(({ code }) => isOrganDysfunctionCode(code.code));
+      if (!hasOrgan) {
+        issues.push({
+          level: "warning",
+          code: r65Entries[0].code.code,
+          rule: "SEPSIS_ORGAN_MISSING",
+          message_en: `R65.2- (severe sepsis) is assigned without a companion acute organ-dysfunction code. Severe sepsis requires the acute organ dysfunction to be coded (e.g. N17.9 acute kidney failure, J96.0- acute respiratory failure, J80 ARDS, D65 DIC, D69.59 thrombocytopenia, R41.82 altered mental status, G93.41 metabolic encephalopathy).`,
+          message_ar: `الرمز R65.2- مُسند دون رمز خلل عضوي حاد مرافق. يتطلب تسمم الدم الشديد ترميز الخلل العضوي الحاد (مثل N17.9 للفشل الكلوي الحاد، J96.0- للفشل التنفسي، J80 لمتلازمة الضائقة التنفسية، D65 لـ DIC).`,
+          suggestion_en: `Add the documented acute organ-dysfunction code(s) alongside R65.2-. If none are documented, severe sepsis (R65.2-) is not supported — use the sepsis code alone.`,
+          suggestion_ar: `أضف رموز الخلل العضوي الحاد الموثقة بجانب R65.2-. إن لم يُوثّق أي خلل عضوي فلا يدعم ترميز تسمم الدم الشديد — استخدم رمز تسمم الدم وحده.`,
+        });
+      }
+      const r65Idx = codes.findIndex(({ code }) => /^R65\.2/.test(code.code));
+      const infectionIdx = codes.findIndex(({ code }) => /^(A4[01]|B9[56]|T81\.44)/.test(code.code.toUpperCase()));
+      if (infectionIdx >= 0 && r65Idx < infectionIdx) {
+        issues.push({
+          level: "warning",
+          code: r65Entries[0].code.code,
+          rule: "SEPSIS_R65_ORDER",
+          message_en: `Sequencing: R65.2- appears BEFORE the underlying infection/sepsis code. Per I.C.1.d.7/.8 the underlying infection (A41.-, T81.44, or the documented infection source) is coded FIRST and R65.2- follows.`,
+          message_ar: `الترتيب: يظهر R65.2- قبل رمز العدوى/تسمم الدم الأساسي. وفق I.C.1.d.7/.8 يُرمز السبب أولاً ثم R65.2-.`,
+          suggestion_en: `Move the infection/sepsis code ahead of R65.2-.`,
+          suggestion_ar: `انقل رمز العدوى/تسمم الدم ليسبق R65.2-.`,
+        });
+      }
+    }
+
+    if (clinicalNote && !r65Entries.length && sepsisLayerPresent) {
+      const severe = detectSevereSepsis(clinicalNote);
+      if (severe) {
+        issues.push({
+          level: "warning",
+          rule: "SEPSIS_SEVERE_MISSING",
+          message_en: `The note documents sepsis with organ-dysfunction/shock cues (${severe.cues.join(", ")}), but no R65.2- code was assigned. Severe sepsis ${severe.shock ? "with septic shock (R65.21)" : "without septic shock (R65.20)"} should be reported secondary to the underlying infection.`,
+          message_ar: `النص يوثّق تسمم دم مع مؤشرات خلل عضوي/صدمة (${severe.cues.join(", ")}) لكن لم يُسند رمز R65.2-. يجب إبلاغ تسمم الدم الشديد ${severe.shock ? "مع صدمة إنتانية (R65.21)" : "بدون صدمة (R65.20)"} ثانوياً بعد رمز العدوى.`,
+          suggestion_en: `Add ${severe.r65} (${severe.r65Desc}) after the infection/sepsis code${severe.organs.length > 0 ? `, plus ${severe.organs.map((o) => o.code).join(", ")}` : ""}.`,
+          suggestion_ar: `أضف ${severe.r65} بعد رمز العدوى/تسمم الدم${severe.organs.length > 0 ? ` مع ${severe.organs.map((o) => o.code).join(", ")}` : ""}.`,
+        });
+      }
+    }
+
+    if (clinicalNote && r65Entries.length) {
+      const sirsOnly = /\b(?:sirs|systemic inflammatory response syndrome)\b/i.test(clinicalNote);
+      const severe = detectSevereSepsis(clinicalNote);
+      if (sirsOnly && !severe) {
+        issues.push({
+          level: "warning",
+          code: r65Entries[0].code.code,
+          rule: "SEPSIS_SIRS_CONFLICT",
+          message_en: `R65.2- (severe sepsis) is assigned but the note documents only SIRS without acute organ dysfunction. SIRS does not meet the severe-sepsis definition — do not report R65.2- unless an acute organ dysfunction (or shock) is documented.`,
+          message_ar: `الرمز R65.2- مُسند لكن النص يوثّق SIRS فقط دون خلل عضوي حاد. متلازمة الاستجابة الالتهابية لا تبلغ تعريف تسمم الدم الشديد — لا تُبلغ R65.2- إلا مع خلل عضوي حاد أو صدمة موثقة.`,
+          suggestion_en: `Remove R65.2- and report the sepsis code (A41.-) alone.`,
+          suggestion_ar: `احذف R65.2- وأبلغ رمز تسمم الدم (A41.-) وحده.`,
         });
       }
     }
