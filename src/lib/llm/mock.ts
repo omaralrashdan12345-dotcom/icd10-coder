@@ -1421,6 +1421,13 @@ export const mockProvider: LLMProvider = {
     // acute organ dysfunction stays plain sepsis.
     const severeSepsis = detectSevereSepsis(text);
 
+    // Early sepsis-context flag (issue V6). Computed up front because it is
+    // reused by the section-4 scoring guard (a chronic skin-ulcer family must
+    // not use the RAG bonus to outrank an acute sepsis code) and by section
+    // 5d (underlying-infection sequencing).
+    const SEPSIS_DOCUMENTED = ["sepsis", "septicemia", "septic shock", "bacteremia", "urosepsis"]
+      .some((k) => keywordPresentNotNegated(text, k));
+
     // When I69.- late-effect codes take over, Z86.73 ("personal history of
     // TIA and cerebral infarction WITHOUT residual deficits") must NOT be
     // reported alongside them — filter it from every history source.
@@ -1519,7 +1526,13 @@ export const mockProvider: LLMProvider = {
           .filter((k) => keywordPresentNotNegated(text, k))
           .reduce((a, b) => (b.length > a.length ? b : a), "");
         const fam = familyOf(fillSide(rule.code.replace(/\{ENC\}|\{LOC\}/g, "A"), detectLaterality(text)));
-        const rag = ragBoost.get(fam) ?? 0;
+        // Issue-V6 guard: when sepsis/shock is documented, a chronic
+        // skin-ulcer family (L89/L97/L98) must not use the RAG bonus to
+        // outrank the acute sepsis code — the ulcer is the infection SOURCE
+        // and is demoted to a secondary source-of-infection diagnosis
+        // instead (section 5-lead-d).
+        let rag = ragBoost.get(fam) ?? 0;
+        if (SEPSIS_DOCUMENTED && (fam === "L89" || fam === "L97" || fam === "L98")) rag = 0;
         const spec = Math.min(1.5, matchedKw.length / 12); // longer keyword = more specific
         const inj = rule.code.startsWith("S") || rule.code.startsWith("T") ? 2 : 0;
         // R-chapter symptom codes are diagnoses of exclusion — when a
@@ -1806,6 +1819,25 @@ export const mockProvider: LLMProvider = {
     // A41.9 follows the T81.44 complication code directly.
     for (const sd of complicationSecondaries) secondaryDetails.push(sd);
 
+    // 5-lead-d (issue V6). Skin-ulcer source sideline: when an acute sepsis
+    // presentation wins the primary slot, a matched chronic skin-ulcer rule
+    // (L89/L97/L98) is the documented source of the infection — demote it to
+    // a secondary diagnosis so the source stays visible (I.C.1.d
+    // underlying-infection companion) instead of being silently dropped.
+    // Skipped when the diabetic E11.621 combo already moved the ulcer to
+    // secondary (5a below); the section-8 pass dedupes by exact code.
+    if (primaryDetail.code.startsWith("A41") && !comboPrimary) {
+      const ulcerSource = hits.find(
+        (h) => h.level === "primary" && /^L(89|97|98)/.test(h.code)
+      );
+      if (ulcerSource) {
+        const ulcerDetail = buildCodeDetail(ulcerSource, text, enc, "chronic");
+        if (!secondaryDetails.some((s) => s.code === ulcerDetail.code)) {
+          secondaryDetails.push(ulcerDetail);
+        }
+      }
+    }
+
     // 5a. ulcer site code moves to secondary when combo primary used
     if (comboPrimary) {
       const ulcerRule = hits.find((h) => h.level === "primary" && h.code.startsWith("L97"));
@@ -1846,8 +1878,8 @@ export const mockProvider: LLMProvider = {
     // underlying infection, then the sepsis code). When the note documents
     // sepsis together with an identifiable infection source, the infection
     // keeps the primary position and A41.9 is added as a secondary.
-    const SEPSIS_DOCUMENTED = ["sepsis", "septicemia", "septic shock", "bacteremia", "urosepsis"]
-      .some((k) => keywordPresentNotNegated(text, k));
+    // (SEPSIS_DOCUMENTED is computed up front for the section-4 scoring
+    // guard; chronic skin-ulcer sources L89/L97/L98 added for issue V6.)
     const SEPSIS_SOURCES = [
       "urinary tract infection", "uti", "pneumonia", "appendicitis", "cholecystitis",
       "diverticulitis", "cellulitis", "osteomyelitis", "pyelonephritis", "infected wound",
@@ -1856,7 +1888,7 @@ export const mockProvider: LLMProvider = {
     const hasInfectionSource =
       SEPSIS_SOURCES.some((k) => keywordPresentNotNegated(text, k)) ||
       [...secondaryDetails.map((s) => s.code), primaryDetail.code].some((code) =>
-        /^(N39\.0|J1[0-8]|J15|K35|K80|K57|K65|K63\.3|L03|M86|N10|A5)/.test(code)
+        /^(N39\.0|J1[0-8]|J15|K35|K80|K57|K65|K63\.3|L03|M86|N10|A5|L89|L97|L98)/.test(code)
       );
     if (
       SEPSIS_DOCUMENTED &&

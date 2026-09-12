@@ -687,11 +687,11 @@ export const CODE_FIRST_RULES: CodeFirstRule[] = [
   },
   {
     rule_id: "SEPSIS_UNDERLYING_INFECTION",
-    description_en: "For sepsis (A41.- / R65.2-), code FIRST the underlying infection (e.g. J18.9 pneumonia, N39.0 UTI, K35.- appendicitis), then the sepsis code.",
-    description_ar: "في حالات تسمم الدم (A41.- / R65.2-)، يُرمز سبب العدوى الأساسي أولاً (مثل J18.9 لالتهاب رئوي أو N39.0 لعدوى بولية)، ثم يُضاف رمز تسمم الدم.",
+    description_en: "For sepsis (A41.- / R65.2-), code FIRST the underlying infection (e.g. J18.9 pneumonia, N39.0 UTI, K35.- appendicitis, L97.- infected chronic skin ulcer), then the sepsis code.",
+    description_ar: "في حالات تسمم الدم (A41.- / R65.2-)، يُرمز سبب العدوى الأساسي أولاً (مثل J18.9 لالتهاب رئوي أو N39.0 لعدوى بولية أو L97.- لقرحة جلدية مزمنة مصابة)، ثم يُضاف رمز تسمم الدم.",
     trigger_codes: ["A41", "A40", "R65.2"],
-    companion_codes: ["J18", "N39.0", "K35", "K80", "K57", "K63.3", "L03", "M86"],
-    code_first_codes: ["J18", "N39.0", "K35", "K80", "K57", "K63.3", "L03", "M86", "N10", "J15", "K65"],
+    companion_codes: ["J18", "N39.0", "K35", "K80", "K57", "K63.3", "L03", "M86", "L97", "L89", "L98"],
+    code_first_codes: ["J18", "N39.0", "K35", "K80", "K57", "K63.3", "L03", "M86", "N10", "J15", "K65", "L97", "L89", "L98"],
     pattern_keywords: ["sepsis", "septicemia", "septic shock", "bacteremia", "septicemia due to"],
   },
   {
