@@ -36,7 +36,12 @@ const FY = process.env.FY || String(new Date().getUTCFullYear() + (new Date().ge
 // Effective FY: Oct 1 — Dec 31 belongs to FY+1's release year label.
 // (FY2026 = released 2025, effective Oct 2025–Sep 2026)
 const CDC_DIR = `https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/${FY}`;
-const CDC_ZIP = `${CDC_DIR}/icd10cm-Code%20Descriptions-${FY}.zip`;
+// Zip naming changed with FY2027: lowercase-hyphenated (FY2026 and earlier
+// used "icd10cm-Code Descriptions-<FY>.zip" with mixed case + spaces).
+const CDC_ZIPS = [
+  `${CDC_DIR}/icd10cm-code-descriptions-${FY}.zip`,
+  `${CDC_DIR}/icd10cm-Code%20Descriptions-${FY}.zip`,
+];
 const CHUNK_SIZE = 6000;
 
 function dotted(code) {
@@ -107,8 +112,19 @@ async function main() {
     const workDir = "/tmp/icd10cm-desc-unzip";
     await rm(workDir, { recursive: true, force: true });
     console.log(`[fetch-icd10cm] downloading CDC FY${FY} zip…`);
-    const bytes = await downloadZip(CDC_ZIP, zipPath);
-    console.log(`[fetch-icd10cm] downloaded ${bytes} bytes`);
+    let bytes = 0;
+    let lastErr;
+    for (const url of CDC_ZIPS) {
+      try {
+        bytes = await downloadZip(url, zipPath);
+        console.log(`[fetch-icd10cm] downloaded ${bytes} bytes from ${url}`);
+        lastErr = undefined;
+        break;
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (lastErr) throw lastErr;
     await unzip(zipPath, workDir);
     const files = await readdir(workDir);
     const orderFile = files.find((f) => /^icd10cm-order-\d{4}\.txt$/i.test(f));

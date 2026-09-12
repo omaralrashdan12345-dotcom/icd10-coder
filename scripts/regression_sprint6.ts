@@ -1,21 +1,24 @@
 /**
- * Sprint-6 regression harness (v0.8.2 — CDC FY2026 data pass).
+ * Sprint-6 regression harness (bundled-extract guard).
  *
- * Guards the bundled FY2026 extract and the app's curated layers against
- * divergence from the OFFICIAL CDC FY2026 classification:
+ * Guards the bundled extract (CDC FY2027 as of the v0.9.0 data refresh;
+ * FY2026 through v0.8.2) and the app's curated layers against divergence
+ * from the OFFICIAL CDC classification:
  *
  *   1. Manifest/chunk integrity — counts, billable flags, no dupes, order.
  *   2. QA* family restoration — FY2026 introduced the first letter-at-
  *      position-2 codes (chapter 17 "Q00-QA0"); the v0.8.1 parser regex
- *      silently dropped all 20 of them (13 billable). These checks keep
- *      the family in the bundle permanently.
+ *      silently dropped all 20 of them (13 billable). FY2027 extended the
+ *      family with the QA1 neoplasm-predisposition block (28 rows, 18
+ *      billable). These checks keep the family in the bundle permanently.
  *   3. Classification sentinels — the X20-X29 / X40-X49 / X60-X69 /
  *      Y10-Y19 / Y40-Y59 / U10 / U12 / B21 / I64 / I69.4- ranges are
  *      ABSENT from the official FY2023-FY2027 publications (verified
  *      against order file, codes file, tabular XML, external-cause index
- *      XML and the NLM mirror). If a future data refresh ever introduces
- *      these codes, these sentinels FAIL on purpose to force a review of
- *      the engine's poisoning/stroke realignment.
+ *      XML and the NLM mirror; FY2027 order file re-verified). If a future
+ *      data refresh ever introduces these codes, these sentinels FAIL on
+ *      purpose to force a review of the engine's poisoning/stroke
+ *      realignment.
  *   4. Curated-layer conformance — every BUILTIN_ICD10 row and every
  *      mock rule code must exist in the bundle (exact, placeholder-
  *      stripped prefix, or the documented DEFERRED allowlist).
@@ -97,9 +100,9 @@ async function runCase(
 // ===========================================================================
 console.log("\n================ 1. manifest & chunk integrity ================");
 // ===========================================================================
-check("manifest fiscalYear 2026", manifest.fiscalYear === 2026, String(manifest.fiscalYear));
-check("manifest total = 98,186 (official FY2026 order-file lines)", manifest.total === 98186, String(manifest.total));
-check("manifest billable = 74,719 (official count)", manifest.billable === 74719, String(manifest.billable));
+check("manifest fiscalYear 2027", manifest.fiscalYear === 2027, String(manifest.fiscalYear));
+check("manifest total = 98,403 (official FY2027 order-file lines)", manifest.total === 98403, String(manifest.total));
+check("manifest billable = 74,879 (official count)", manifest.billable === 74879, String(manifest.billable));
 check("17 chunks", chunks.length === 17, String(chunks.length));
 check("chunk entry sum == manifest total", ordered.length === manifest.total, `${ordered.length} vs ${manifest.total}`);
 check("chunks declared in manifest == chunk files", manifest.chunks.length === chunks.length);
@@ -107,13 +110,13 @@ const sizesOk = chunks.every((c) => c.codes.length > 0 && c.codes.length <= 6000
 check("all chunk sizes within 1..6000", sizesOk);
 check("no duplicate codes across chunks", db.size === ordered.length, `${db.size} unique vs ${ordered.length}`);
 check("first code is A00", ordered[0] === "A00", ordered[0]);
-check("last code is U09.9 (FY2026 tabular tail)", ordered[ordered.length - 1] === "U09.9", ordered[ordered.length - 1]);
+check("last code is U09.9 (FY2027 tabular tail)", ordered[ordered.length - 1] === "U09.9", ordered[ordered.length - 1]);
 const shapeRe = /^[A-Z][A-Z0-9][\dA-Z]*(\.[\dA-Z]+)?$/;
 const badShape = ordered.filter((c) => !shapeRe.test(c));
 check("every code matches the widened CM shape", badShape.length === 0, badShape.slice(0, 5).join(","));
 
 // ===========================================================================
-console.log("\n================ 2. QA* family restoration (chapter 17 Q00-QA0) ================");
+console.log("\n======== 2. QA* family restoration (chapter 17 Q00-QA1) ========");
 // ===========================================================================
 const qaExpect: [string, string, number][] = [
   ["QA0", "Neurodev disord related to specific genetic patho variants", 0],
@@ -124,6 +127,12 @@ const qaExpect: [string, string, number][] = [
   ["QA0.0142", "DLG4-related synaptopathy", 1],
   ["QA0.0151", "FOXG1 syndrome", 1],
   ["QA0.8", "Other neurodev dis rel to patho var in other specific genes", 1],
+  // FY2027 extension: QA1 inherited neoplasm-predisposition block
+  ["QA1", "Genetic disorders associated with neoplasms, NEC", 0],
+  ["QA1.71", "Lynch syndrome", 1],
+  ["QA1.790", "Familial cancer syndrome with pathogenic BRCA1 mutation", 1],
+  ["QA1.791", "Familial cancer syndrome with pathogenic BRCA2 mutation", 1],
+  ["QA1.792", "Li Fraumeni syndrome", 1],
 ];
 for (const [code, desc, flag] of qaExpect) {
   const rec = db.get(code);
@@ -134,10 +143,12 @@ for (const [code, desc, flag] of qaExpect) {
   );
 }
 const qaAll = ordered.filter((c) => c.startsWith("QA"));
-check("20 QA* rows in bundle (official FY2026 count)", qaAll.length === 20, String(qaAll.length));
-check("13 QA* rows billable", qaAll.filter((c) => db.get(c)!.flag === 1).length === 13);
-check("QA* slotted between Q99.9 and R00 (tabular order)", ordered[ordered.indexOf("QA0") - 1] === "Q99.9" && ordered[ordered.indexOf("QA0.8") + 1] === "R00");
+check("28 QA* rows in bundle (official FY2027 count)", qaAll.length === 28, String(qaAll.length));
+check("18 QA* rows billable", qaAll.filter((c) => db.get(c)!.flag === 1).length === 18);
+const lastQa = qaAll[qaAll.length - 1];
+check("QA* slotted between Q99.9 and R00 (tabular order)", ordered[ordered.indexOf("QA0") - 1] === "Q99.9" && ordered[ordered.indexOf(lastQa) + 1] === "R00", `${ordered[ordered.indexOf("QA0") - 1]} … ${lastQa} → ${ordered[ordered.indexOf(lastQa) + 1]}`);
 check("chapterOfCode(QA0.0101) -> chapter 17", chapterOfCode("QA0.0101")?.id === 17, JSON.stringify(chapterOfCode("QA0.0101")));
+check("chapterOfCode(QA1.71) -> chapter 17 (FY2027 QA1 block)", chapterOfCode("QA1.71")?.id === 17, JSON.stringify(chapterOfCode("QA1.71")));
 check("chapterOfCode(QA0) -> chapter 17", chapterOfCode("QA0")?.id === 17);
 check("chapterOfCode(Q99.9) -> chapter 17", chapterOfCode("Q99.9")?.id === 17);
 check("chapterOfCode(R00) -> chapter 18 (QA range does not leak)", chapterOfCode("R00")?.id === 18);
@@ -145,14 +156,14 @@ check("chapterOfCode(R00) -> chapter 18 (QA range does not leak)", chapterOfCode
 // ===========================================================================
 console.log("\n================ 3. official-classification sentinels ================");
 // ===========================================================================
-// Ranges ABSENT from the official FY2026 publication (order file, codes
-// file, tabular XML, eindex XML, FY2023-FY2027; mirrored by NLM). If any
-// of these ever appears in a refreshed bundle, STOP and review the
-// engine's poisoning/stroke realignment before shipping.
+// Ranges ABSENT from the official FY2027 publication (order file re-verified
+// for FY2027; consistent with FY2023-FY2026 order/tabular/eindex XML and the
+// NLM mirror). If any of these ever appears in a refreshed bundle, STOP and
+// review the engine's poisoning/stroke realignment before shipping.
 const absentPrefixes = ["X20", "X21", "X23", "X40", "X44", "X59", "X60", "X64", "X69", "Y10", "Y13", "Y40", "Y59", "I69.4"];
 for (const p of absentPrefixes) {
   const hits = ordered.filter((c) => c === p || c.startsWith(p + ".") || c.startsWith(p));
-  check(`sentinel: no ${p}* codes in the official FY2026 extract`, hits.length === 0, hits.slice(0, 5).join(","));
+  check(`sentinel: no ${p}* codes in the official FY2027 extract`, hits.length === 0, hits.slice(0, 5).join(","));
 }
 for (const absent of ["B21", "I64", "I64.9", "U10.9", "U12.9"]) {
   check(`sentinel: ${absent} absent (retired / never in CM)`, !db.has(absent));
@@ -253,7 +264,7 @@ await runCase("D4 — stairs fall uses W10.8XXA",
   "Elderly man fell down the stairs at home, right hip pain.",
   (r) => {
     check("W10.8XXA tertiary", r.tertiary_icd10.some((c) => c.code === "W10.8XXA"), r.tertiary_icd10.map((c) => c.code).join(","));
-    check("no W10.XXXA generic (absent from FY2026)", !allCodes(r).some((c) => c === "W10.XXXA"), allCodes(r).join(","));
+    check("no W10.XXXA generic (absent FY2026-FY2027)", !allCodes(r).some((c) => c === "W10.XXXA"), allCodes(r).join(","));
   });
 
 await runCase("D5 — fentanyl codes the FY2024+ T40.41- family, not T40.2",
@@ -265,7 +276,7 @@ await runCase("D5 — fentanyl codes the FY2024+ T40.41- family, not T40.2",
 
 // ===========================================================================
 console.log("\n==================================================");
-console.log(`Sprint 6 (CDC FY2026 data pass): ${pass} passed, ${fail} failed`);
+console.log(`Sprint 6 (bundled-extract guard, FY2027): ${pass} passed, ${fail} failed`);
 if (failures.length) {
   console.log("FAILURES:");
   for (const f of failures) console.log("  - " + f);

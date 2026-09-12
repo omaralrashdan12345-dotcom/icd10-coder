@@ -49,8 +49,8 @@ async function main() {
   const pubDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "icd10cm");
   const manifest = JSON.parse(await readFile(path.join(pubDir, "manifest.json"), "utf8"));
   check("manifest total >= 98000", manifest.total >= 98000, String(manifest.total));
-  check("manifest billable ~74700", manifest.billable >= 74600 && manifest.billable <= 74800, String(manifest.billable));
-  check("fiscal year 2026", manifest.fiscalYear === 2026, String(manifest.fiscalYear));
+  check("manifest billable ~74800 (FY2027)", manifest.billable >= 74700 && manifest.billable <= 75000, String(manifest.billable));
+  check("fiscal year 2027", manifest.fiscalYear === 2027, String(manifest.fiscalYear));
 
   let sum = 0;
   let billableSum = 0;

@@ -1,111 +1,111 @@
 {
-  "source": "CDC/NCHS ICD-10-CM FY2026 order file (https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/)",
-  "fiscalYear": 2026,
-  "generatedAt": "2026-09-12T16:20:28.105Z",
-  "total": 98186,
-  "billable": 74719,
+  "source": "CDC/NCHS ICD-10-CM FY2027 order file (https://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/ICD10CM/)",
+  "fiscalYear": 2027,
+  "generatedAt": "2026-09-12T20:35:03.130Z",
+  "total": 98403,
+  "billable": 74879,
   "chunkSize": 6000,
   "chunks": [
     {
       "file": "chunk-00.json",
       "count": 6000,
       "from": "A00",
-      "to": "F41.1"
+      "to": "F40.29"
     },
     {
       "file": "chunk-01.json",
       "count": 6000,
-      "from": "F41.3",
-      "to": "I63.111"
+      "from": "F40.290",
+      "to": "I63"
     },
     {
       "file": "chunk-02.json",
       "count": 6000,
-      "from": "I63.112",
-      "to": "M13.122"
+      "from": "I63.0",
+      "to": "M12.822"
     },
     {
       "file": "chunk-03.json",
       "count": 6000,
-      "from": "M13.129",
-      "to": "M89.233"
+      "from": "M12.829",
+      "to": "M89.05"
     },
     {
       "file": "chunk-04.json",
       "count": 6000,
-      "from": "M89.234",
-      "to": "Q65.8"
+      "from": "M89.051",
+      "to": "Q53.9"
     },
     {
       "file": "chunk-05.json",
       "count": 6000,
-      "from": "Q65.81",
-      "to": "S20.469"
+      "from": "Q54",
+      "to": "S20.351A"
     },
     {
       "file": "chunk-06.json",
       "count": 6000,
-      "from": "S20.469A",
-      "to": "S42.024B"
+      "from": "S20.351D",
+      "to": "S41.152S"
     },
     {
       "file": "chunk-07.json",
       "count": 6000,
-      "from": "S42.024D",
-      "to": "S52.559C"
+      "from": "S41.159",
+      "to": "S52.531J"
     },
     {
       "file": "chunk-08.json",
       "count": 6000,
-      "from": "S52.559D",
-      "to": "S62.664B"
+      "from": "S52.531K",
+      "to": "S62.648"
     },
     {
       "file": "chunk-09.json",
       "count": 6000,
-      "from": "S62.664D",
-      "to": "S72.8X2C"
+      "from": "S62.648A",
+      "to": "S72.464R"
     },
     {
       "file": "chunk-10.json",
       "count": 6000,
-      "from": "S72.8X2D",
-      "to": "S86.092D"
+      "from": "S72.464S",
+      "to": "S85.599"
     },
     {
       "file": "chunk-11.json",
       "count": 6000,
-      "from": "S86.092S",
-      "to": "T21.06XD"
+      "from": "S85.599A",
+      "to": "T20.56"
     },
     {
       "file": "chunk-12.json",
       "count": 6000,
-      "from": "T21.06XS",
-      "to": "T44.0X4"
+      "from": "T20.56XA",
+      "to": "T43.641"
     },
     {
       "file": "chunk-13.json",
       "count": 6000,
-      "from": "T44.0X4A",
-      "to": "T82.329A"
+      "from": "T43.641A",
+      "to": "T81.60"
     },
     {
       "file": "chunk-14.json",
       "count": 6000,
-      "from": "T82.329D",
-      "to": "V84.6XXA"
+      "from": "T81.60XA",
+      "to": "V80.790D"
     },
     {
       "file": "chunk-15.json",
       "count": 6000,
-      "from": "V84.6XXD",
-      "to": "Y92.049"
+      "from": "V80.790S",
+      "to": "Y38.9X1D"
     },
     {
       "file": "chunk-16.json",
-      "count": 2186,
-      "from": "Y92.09",
+      "count": 2403,
+      "from": "Y38.9X1S",
       "to": "U09.9"
     }
   ]

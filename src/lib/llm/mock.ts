@@ -101,11 +101,12 @@ const MOCK_RULES: MockRule[] = [
   },
   {
     keywords: ["plantar fasciitis", "heel pain"],
-    code: "M72.2",
-    description: "Plantar fascial fibromatosis",
+    code: "M67.A0{SIDE}",
+    description: "Plantar fasciitis, {SIDE_DESC} foot",
     level: "primary",
-    rationale: "Plantar fasciitis / heel pain. M72.2 is the standard code.",
+    rationale: "Plantar fasciitis — FY2027 added the dedicated M67.A- family (replaces the old M72.2 fallback, which FY2027 demoted to a non-billable header). Laterality from the note.",
     confidence: 0.82,
+    detect_laterality: true,
   },
   {
     keywords: ["ankle sprain", "sprained ankle", "rolled ankle"],

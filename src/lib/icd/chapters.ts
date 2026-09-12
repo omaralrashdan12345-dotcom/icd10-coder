@@ -29,7 +29,7 @@ export const ICD10CM_CHAPTERS: IcdChapter[] = [
   { id: 14, from: "N00", to: "N99", label_en: "Diseases of the genitourinary system", label_ar: "أمراض الجهاز البولي التناسلي" },
   { id: 15, from: "O00", to: "O9A", label_en: "Pregnancy, childbirth and the puerperium", label_ar: "الحمل والولادة والنفاس" },
   { id: 16, from: "P00", to: "P96", label_en: "Certain conditions originating in the perinatal period", label_ar: "حالات ما حول الولادة" },
-  { id: 17, from: "Q00", to: "QA0", label_en: "Congenital malformations, deformations and chromosomal abnormalities (Q00-QA0, incl. genetic neurodevelopmental disorders)", label_ar: "التشوهات الخلقية" },
+  { id: 17, from: "Q00", to: "QA1", label_en: "Congenital malformations, deformations and chromosomal abnormalities (Q00-QA1, incl. genetic neurodevelopmental and neoplasm-predisposition disorders)", label_ar: "التشوهات الخلقية" },
   { id: 18, from: "R00", to: "R99", label_en: "Symptoms, signs and abnormal clinical findings", label_ar: "الأعراض والعلامات" },
   { id: 19, from: "S00", to: "T88", label_en: "Injury, poisoning and certain other consequences of external causes", label_ar: "الإصابات والتسمم" },
   { id: 20, from: "V00", to: "Y99", label_en: "External causes of morbidity", label_ar: "الأسباب الخارجية" },
