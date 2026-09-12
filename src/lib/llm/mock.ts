@@ -15,6 +15,8 @@ import {
 } from "@/lib/icd/encounter";
 import { detectResidualConditions, type ResidualHit } from "@/lib/icd/sequela";
 import { detectMedicationStatusCodes } from "@/lib/icd/medication-conditions";
+import { detectStrokeSequela } from "@/lib/icd/stroke-sequela";
+import { detectPoisoningIntent } from "@/lib/icd/poisoning-intent";
 
 /**
  * Smart offline ICD-10-CM coder (v0.3).
@@ -1387,6 +1389,30 @@ export const mockProvider: LLMProvider = {
     // so they can drive both the secondary list and primary promotion.
     const medStatus = detectMedicationStatusCodes(text);
 
+    // Sprint 4 (idea S): CVA late effects — a PREVIOUS cerebrovascular event
+    // plus a documented residual deficit requires the underlying stroke code
+    // (I60-I67) FIRST and the I69.- late-effect code SECOND (I.C.6.a).
+    // Detected on the ORIGINAL note so cues inside stripped history spans
+    // ("history of ischemic stroke") still resolve the stroke type.
+    const strokeSeq = detectStrokeSequela(note, (k) =>
+      keywordPresentNotNegated(note.toLowerCase(), k)
+    );
+
+    // Sprint 4 (idea P): poisoning intent — T36-T50 codes carry the
+    // documented intent (accidental / self-harm / assault / undetermined)
+    // and the external-cause code must match it (I.C.19.e). When an active
+    // poisoning presentation is detected, the poisoning T-code becomes the
+    // PRIMARY diagnosis and the intent-matched external cause is supplemental.
+    const poison = detectPoisoningIntent(note, (k) => keywordPresentNotNegated(text, k));
+
+    // When I69.- late-effect codes take over, Z86.73 ("personal history of
+    // TIA and cerebral infarction WITHOUT residual deficits") must NOT be
+    // reported alongside them — filter it from every history source.
+    const i69Active = strokeSeq !== null && strokeSeq.residuals.length > 0;
+    const historyFindings = i69Active
+      ? historyRes.findings.filter((f) => f.code !== "Z86.73")
+      : historyRes.findings;
+
     // --- RAG boost map: code family -> best RAG score
     const ragBoost = new Map<string, number>();
     for (const r of ragContext ?? []) {
@@ -1404,8 +1430,8 @@ export const mockProvider: LLMProvider = {
 
     // --- 2. Detect chronic conditions (+ Sprint-1 history findings)
     const chronicHits: ChronicHit[] = [
-      ...detectChronicConditions(text),
-      ...historyRes.findings.map((f) => ({
+      ...detectChronicConditions(text).filter((h) => !(i69Active && h.code === "Z86.73")),
+      ...historyFindings.map((f) => ({
         code: f.code,
         description: f.description,
         label_en: f.label_en,
@@ -1531,6 +1557,67 @@ export const mockProvider: LLMProvider = {
       }
     }
 
+    // --- 4e. Stroke late-effect restructure (Sprint 4, idea S) — I.C.6.a:
+    // the underlying cerebrovascular condition (I60-I67) is sequenced FIRST
+    // and the I69.- residual condition code(s) follow as secondary
+    // diagnoses. FY2026: the I69.4- family is absent from the order file,
+    // so type-unspecified strokes map to the I69.9- family.
+    let strokeI69Secondaries: ICDCodeDetail[] = [];
+    if (strokeSeq && strokeSeq.residuals.length > 0) {
+      strokeI69Secondaries = strokeSeq.residuals.map((r, idx) => ({
+        code: r.code,
+        description: r.description,
+        rationale:
+          idx === 0
+            ? `CVA late effect: the residual condition ("${r.id}") is reported with the I69.- subfamily matching the documented stroke type (${strokeSeq.typeLabel}). Per ICD-10-CM Official Guidelines I.C.6.a, the underlying cerebrovascular condition (${strokeSeq.underlyingCode}) is sequenced FIRST and the I69.- late-effect code follows; Z86.73 is not reported because it applies only when there are no residual deficits.`
+            : `Additional documented residual deficit of the prior ${strokeSeq.typeLabel} ("${r.id}"), reported per I.C.6.a alongside the I69.- late-effect codes.`,
+        confidence: r.confidence,
+        laterality: /M|hemiplg/i.test(r.code) ? ("not_applicable" as const) : ("not_applicable" as const),
+        acuity: "chronic" as const,
+        seventh_character: "not_required" as const,
+      }));
+      primaryDetail = {
+        code: strokeSeq.underlyingCode,
+        description: strokeSeq.underlyingDescription,
+        rationale: `Underlying cerebrovascular condition (${strokeSeq.typeLabel}) — sequenced FIRST per ICD-10-CM Official Guidelines I.C.6.a, followed by the I69.- code(s) for the documented residual deficit(s).`,
+        confidence: 0.86,
+        laterality: "not_applicable",
+        acuity: "chronic",
+        seventh_character: "not_required",
+      };
+    }
+
+    // --- 4f. Poisoning intent restructure (Sprint 4, idea P) — I.C.19.e:
+    // the poisoning T-code carrying the DOCUMENTED intent becomes the
+    // primary diagnosis (code first the poisoning), and the external-cause
+    // code with the SAME intent is supplemental. Undocumented intent codes
+    // as UNDETERMINED, never as accidental.
+    let poisonTertiary: ICDCodeDetail | null = null;
+    if (poison) {
+      primaryDetail = {
+        code: poison.tcode,
+        description: poison.tdesc,
+        rationale: `Poisoning encounter — coded FIRST per ICD-10-CM Official Guidelines I.C.19.e with the documented intent (${poison.intentLabel}${poison.cue ? `, cue: "${poison.cue}"` : ", not documented in the note — intent coded as undetermined"}). The external-cause code ${poison.extCode} carries the same intent.`,
+        confidence: 0.86,
+        laterality: "not_applicable",
+        acuity: "acute",
+        seventh_character: "not_required",
+      };
+      poisonTertiary = {
+        code: poison.extCode,
+        description: poison.extDesc,
+        rationale: `External cause matching the poisoning intent (${poison.intentLabel}) per I.C.19.e — external cause codes are supplemental and never replace the T-code as principal diagnosis.`,
+        confidence: 0.85,
+        laterality: "not_applicable",
+        acuity: "unspecified",
+        seventh_character: "not_required",
+      };
+      // Remove the generic X44 accidental-poisoning rule — its intent
+      // (accidental) would conflict with the documented intent.
+      const xi = hits.findIndex((h) => h.code === "X44.XXX{ENC}");
+      if (xi !== -1) hits.splice(xi, 1);
+    }
+
     // --- 4b. Open/closed fracture 7th character (Sprint 1, Idea B-lite) ---
     // Guideline (AHIMA/CMS): a fracture NOT stated as open or closed defaults
     // to CLOSED (A) — already our template default. When the note explicitly
@@ -1649,6 +1736,11 @@ export const mockProvider: LLMProvider = {
     // list (residual BEFORE injury, per I.C.19.2).
     for (const rd of sequelaExtraResiduals) secondaryDetails.push(rd);
     if (sequelaInjurySecondary) secondaryDetails.push(sequelaInjurySecondary);
+
+    // 5-lead-b. Stroke late-effect placement (Sprint 4, idea S): the I69.-
+    // residual codes follow the underlying stroke code (primary) directly,
+    // so they lead the secondary list per I.C.6.a.
+    for (const sd of strokeI69Secondaries) secondaryDetails.push(sd);
 
     // 5a. ulcer site code moves to secondary when combo primary used
     if (comboPrimary) {
@@ -1782,6 +1874,10 @@ export const mockProvider: LLMProvider = {
       dedupedTertiary.push(t);
     }
 
+    // --- 7b. Poisoning external cause (Sprint 4, idea P) leads the
+    // supplemental list (intent-matched, see section 4f).
+    if (poisonTertiary) dedupedTertiary.unshift(poisonTertiary);
+
     // --- 8. Dedupe secondary by exact code
     const finalSecondary = secondaryDetails.filter(
       (s, i, arr) => arr.findIndex((x) => x.code === s.code) === i
@@ -1828,8 +1924,14 @@ export const mockProvider: LLMProvider = {
         `Secondary: ${finalSecondary.length} co-existing condition(s) detected from the UHDDS chronic-condition library (${CHRONIC_CONDITION_MATCHERS.length} patterns). ` +
         `Supplemental: ${dedupedTertiary.length} external cause / supporting code(s). ` +
         `Matched from a built-in library of ${MOCK_RULES.length} clinical patterns with negation-aware matching. ` +
-        `History codes applied: ${historyRes.findings.length}. ` +
+        `History codes applied: ${historyFindings.length}. ` +
         `Medication status codes applied: ${medStatus.length} (Z79/Z88/Z51.81). ` +
+        (strokeSeq && strokeSeq.residuals.length > 0
+          ? "CVA late-effect coding applied (underlying stroke first, I69.- residual second). "
+          : "") +
+        (poison
+          ? `Poisoning coded with documented intent: ${poison.intentLabel} (I.C.19.e). `
+          : "") +
         (enc === "sequela" && sequelaInjurySecondary
           ? "Sequela dual-coding applied (residual condition first, injury code with 7th character S second). "
           : "") +

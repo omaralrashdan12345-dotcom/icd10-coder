@@ -26,6 +26,7 @@ import { extractUnconfirmedDiagnoses } from "./unconfirmed";
 import { detectEncounterType } from "./encounter";
 import { isSequelaInjuryCode, isResidualCode, detectResidualConditions } from "./sequela";
 import { detectMedicationStatusCodes } from "./medication-conditions";
+import { detectStrokeSequela } from "./stroke-sequela";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -470,6 +471,130 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
         suggestion_en: `Add ${f.code} (${f.description}) to Secondary Diagnoses.`,
         suggestion_ar: `أضف ${f.code} إلى التشخيصات الثانوية.`,
       });
+    }
+  }
+
+  // 13. CVA late-effect coding (Sprint 4, Idea S) — Official Guidelines
+  //     I.C.6.a: when a residual condition (late effect) of a cerebrovascular
+  //     event is coded with I69.-, the UNDERLYING condition (I60-I67) must be
+  //     sequenced FIRST. Z86.73 ("...without residual deficits") must NOT be
+  //     reported together with I69.- codes.
+  {
+    const i69Entries = codes.filter(({ code }) => /^I69\./.test(code.code));
+    if (i69Entries.length > 0) {
+      const firstI69Idx = codes.findIndex(({ code }) => /^I69\./.test(code.code));
+      const underlyingIdx = codes.findIndex(({ code }) => /^I6[0-7]/.test(code.code));
+      const hasUnderlying = underlyingIdx >= 0;
+      if (!hasUnderlying) {
+        issues.push({
+          level: "warning",
+          code: i69Entries[0].code.code,
+          rule: "I69_UNDERLYING_MISSING",
+          message_en: `Late-effect code ${i69Entries[0].code.code} (I69.-) requires the UNDERLYING cerebrovascular condition (I60-I67, e.g. the original stroke) to be coded FIRST, per ICD-10-CM Official Guidelines I.C.6.a. Two codes are generally required: the underlying condition, then the I69.- residual condition.`,
+          message_ar: `رمز الاختلاطات ${i69Entries[0].code.code} (I69.-) يتطلب ترميز الحالة الدماغية الوعائية الأصلية (I60-I67) أولاً، وفق I.C.6.a. يلزم رمزان: الحالة الأصلية ثم رمز الاختلاط I69.-.`,
+          suggestion_en: `Add the underlying stroke code (e.g. I63.9 cerebral infarction, unspecified) BEFORE ${i69Entries[0].code.code}.`,
+          suggestion_ar: `أضف رمز الجلطة الأصلية (مثل I63.9) قبل ${i69Entries[0].code.code}.`,
+        });
+      } else if (underlyingIdx > firstI69Idx) {
+        issues.push({
+          level: "warning",
+          code: i69Entries[0].code.code,
+          rule: "I69_ORDER",
+          message_en: `Sequencing: the underlying cerebrovascular condition must be listed BEFORE the I69.- late-effect code. Currently ${i69Entries[0].code.code} appears first.`,
+          message_ar: `الترتيب: يجب إدراج الحالة الوعائية الأصلية قبل رمز الاختلاطات I69.-. حالياً يظهر ${i69Entries[0].code.code} أولاً.`,
+          suggestion_en: `Move the underlying condition code (I60-I67) ahead of the I69.- code.`,
+          suggestion_ar: `انقل رمز الحالة الأصلية (I60-I67) ليسبق رمز I69.-.`,
+        });
+      }
+      const z8673Idx = codes.findIndex(({ code }) => code.code === "Z86.73");
+      if (z8673Idx >= 0) {
+        issues.push({
+          level: "warning",
+          code: "Z86.73",
+          rule: "HISTORY_STROKE_CONFLICT",
+          message_en: `Z86.73 (personal history of TIA and cerebral infarction WITHOUT residual deficits) conflicts with the I69.- late-effect code(s) ${i69Entries.map((c) => c.code.code).join(", ")}. When a residual deficit is coded with I69.-, the history code is redundant and must be removed.`,
+          message_ar: `رمز Z86.73 (تاريخ سابق بدون اختلاطات) يتعارض مع رموز الاختلاطات I69.-. عند ترميز الاختلاط بـ I69.- يجب حذف رمز التاريخ السابق.`,
+          suggestion_en: `Remove Z86.73 — the I69.- code already reports the prior cerebrovascular event with its residual deficit.`,
+          suggestion_ar: `احذف Z86.73 — رمز I69.- يوثّق الجلطة السابقة مع اختلاطاتها.`,
+        });
+      }
+    }
+    // Z86.73 assigned while the note documents residual deficits of a prior
+    // stroke -> the deficits belong in I69.- instead.
+    if (clinicalNote && codes.some(({ code }) => code.code === "Z86.73")) {
+      const seq = detectStrokeSequela(clinicalNote, (k) => keywordPresentNotNegated(clinicalNote, k));
+      if (seq && seq.residuals.length > 0) {
+        issues.push({
+          level: "warning",
+          code: "Z86.73",
+          rule: "Z86_73_RESIDUAL_CONFLICT",
+          message_en: `The note documents residual deficit(s) of a prior stroke (${seq.residuals.map((r) => r.id).join(", ")}), but Z86.73 is assigned — Z86.73 applies only when there are NO residual deficits. Report the late effects with I69.- instead.`,
+          message_ar: `النص يوثّق اختلاطات عصبية لجلطة سابقة، لكن Z86.73 مُسند — وهذا الرمز يُستخدم فقط عند غياب الاختلاطات. استخدم رموز I69.- للاختلاطات.`,
+          suggestion_en: `Replace Z86.73 with the underlying condition code + ${seq.residuals[0].code} (${seq.residuals[0].description}), sequenced underlying-first per I.C.6.a.`,
+          suggestion_ar: `استبدل Z86.73 برمز الحالة الأصلية + ${seq.residuals[0].code}، مع ترتيب الحالة الأصلية أولاً وفق I.C.6.a.`,
+        });
+      }
+    }
+  }
+
+  // 14. Poisoning intent consistency (Sprint 4, Idea P) — Official Guidelines
+  //     I.C.19.e: the intent (accidental / self-harm / assault / undetermined)
+  //     must be documented and the T36-T50 code and its external-cause code
+  //     must carry the SAME intent.
+  {
+    const poisonEntries = codes.filter(({ code }) => /^T(3[6-9]|4[0-9]|50)/.test(code.code));
+    const intentOfT = (codeStr: string): string | null => {
+      // FY2026 encodings: T39.1X1A (intent after X), T39.011A / T50.904A
+      // (intent = last digit), T39.91XA (intent before X). Extract the
+      // body after the category dot, drop the 7th character, then locate
+      // the intent digit.
+      const m = codeStr.toUpperCase().match(/^T(?:3[6-9]|4[0-9]|50)\.([0-9X]+[ABCDGKPS]?)$/);
+      if (!m) return null;
+      const body = m[1].replace(/[ABCDGKPS]$/, "");
+      if (body.includes("X")) {
+        const xi = body.indexOf("X");
+        const after = body[xi + 1];
+        if (after && /^[1-4]$/.test(after)) return after;
+        const before = body[xi - 1];
+        if (before && /^[1-4]$/.test(before)) return before;
+        return null;
+      }
+      const last = body[body.length - 1];
+      return /^[1-4]$/.test(last) ? last : null;
+    };
+    const intentOfExt = (codeStr: string): string | null => {
+      if (/^X4/.test(codeStr)) return "1";
+      if (/^X6/.test(codeStr)) return "2";
+      if (/^X8[0-5]/.test(codeStr)) return "3";
+      if (/^Y1[0-9]/.test(codeStr)) return "4";
+      return null;
+    };
+    for (const { code, level } of poisonEntries) {
+      const tIntent = intentOfT(code.code);
+      if (!tIntent) continue;
+      if (tIntent === "4") {
+        issues.push({
+          level: "info",
+          code: code.code,
+          rule: "POISONING_INTENT_UNDETERMINED",
+          message_en: `Poisoning code ${code.code} (${level}) documents UNDETERMINED intent. Per I.C.19.e the intent must be documented in the record; if the note later establishes accidental, self-harm, or assault, update the 4th/5th character to 1, 2, or 3 and align the external-cause code.`,
+          message_ar: `رمز التسمم ${code.code} (${level}) بحجة غير محددة. وفق I.C.19.e يجب توثيق النية؛ فإن تبيّن أنها عرضية أو إيذاء ذاتي أو اعتداء، حدّث الرمز الرابع/الخامس إلى 1 أو 2 أو 3 ووافق رمز السبب الخارجي.`,
+        });
+        continue;
+      }
+      const extEntries = codes.filter(({ code: c2 }) => isExternalCause(c2.code));
+      const extIntents = [...new Set(extEntries.map(({ code: c2 }) => intentOfExt(c2.code)).filter(Boolean))];
+      if (extIntents.length > 0 && !extIntents.includes(tIntent)) {
+        issues.push({
+          level: "warning",
+          code: code.code,
+          rule: "POISONING_INTENT_MISMATCH",
+          message_en: `Intent mismatch: poisoning code ${code.code} carries intent character "${tIntent}" but the external-cause code(s) ${extEntries.map((c2) => c2.code.code).join(", ")} carry intent "${extIntents.join("/")}". The T36-T50 code and its external-cause code must document the SAME intent per I.C.19.e.`,
+          message_ar: `عدم تطابق النية: رمز التسمم ${code.code} يحمل نية "${tIntent}" بينما رمز السبب الخارجي يحمل نية مختلفة. يجب أن يوثّق رمز T ورمز السبب الخارجي النية نفسها وفق I.C.19.e.`,
+          suggestion_en: `Align the intent characters of the poisoning code and its external cause (1 accidental, 2 self-harm, 3 assault, 4 undetermined).`,
+          suggestion_ar: `وحّد خانة النية بين رمز التسمم والسبب الخارجي (1 عرضي، 2 إيذاء ذاتي، 3 اعتداء، 4 غير محدد).`,
+        });
+      }
     }
   }
 
