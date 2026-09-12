@@ -6,6 +6,7 @@
  */
 import { mockProvider } from "../src/lib/llm/mock";
 import { validateResponse } from "../src/lib/icd/validation";
+import { ragSearch } from "../src/lib/icd/rag";
 import type { ClinicalCodingResponse, ICDCodeDetail } from "../src/lib/schemas/icd";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -349,6 +350,8 @@ async function main() {
       check("N17.9 organ dysfunction present", has(cs, "N17.9"), cs.join(","));
       check("R65.20 absent", !has(cs, "R65.20"), cs.join(","));
       check("R65.21 not primary", r.primary_icd10.code !== "R65.21", r.primary_icd10.code);
+      check("A41.9 primary (sepsis code-first)", r.primary_icd10.code === "A41.9", r.primary_icd10.code);
+      check("L97.4 demoted to secondary (source sideline)", r.secondary_icd10.some((c) => c.code === "L97.4"), cs.join(","));
     }
   );
 
@@ -393,6 +396,65 @@ async function main() {
       check("N39.0 still present", has(cs, "N39.0"), cs.join(","));
     }
   );
+
+  // ---- Sprint-5 issue V6 regression: RAG context must NOT let a chronic
+  // skin-ulcer rule (L97) outrank an acute sepsis / septic-shock presentation.
+  // Found in live acceptance smoke — the harness previously exercised only the
+  // empty-ragContext path (runCase), missing the /api/code integration path
+  // that feeds ragSearch() hits. ----
+  console.log("\n============ issue V6 — RAG-dependent sepsis primary ============");
+
+  const V6_NOTE =
+    "Septic shock from a foot ulcer infection, on norepinephrine drip. Acute renal failure.";
+  const V6_SIM_RAG = [
+    { code: "L97.402", description: "Non-pressure chronic ulcer of left heel and midfoot with fat layer exposed", score: 0.9, source: "vector_db" as const },
+    { code: "L89.152", description: "Pressure ulcer of left sacral region, stage 2", score: 0.85, source: "vector_db" as const },
+    { code: "L97.912", description: "Non-pressure chronic ulcer of unspecified part of lower leg with fat layer exposed", score: 0.8, source: "vector_db" as const },
+  ];
+
+  {
+    console.log("\n▶ V6-1 — simulated L89/L97 RAG hits (deterministic repro of the live failure)");
+    const { parsed } = await mockProvider.generateCoding(V6_NOTE, V6_SIM_RAG);
+    const issues = validateResponse(parsed, V6_NOTE);
+    const cs = allCodes(parsed);
+    for (const c of cs) emittedCodes.add(c.toUpperCase());
+    console.log(`   primary=${parsed.primary_icd10.code} secondary=[${parsed.secondary_icd10.map((c) => c.code).join(", ")}]`);
+    check("primary A41.9 (sepsis, NOT L97.4)", parsed.primary_icd10.code === "A41.9", parsed.primary_icd10.code);
+    check("R65.21 present (septic shock)", has(cs, "R65.21"), cs.join(","));
+    check("N17.9 organ dysfunction present", has(cs, "N17.9"), cs.join(","));
+    check("L97.4 demoted to secondary (source sideline)", parsed.secondary_icd10.some((c) => c.code === "L97.4"), cs.join(","));
+    check("no error-level issues", !issues.some((i) => i.level === "error"), JSON.stringify(issues));
+  }
+
+  {
+    console.log("\n▶ V6-2 — real ragSearch() hits (mirrors the live /api/code path)");
+    const outcome = await ragSearch(V6_NOTE);
+    const ctx = outcome.results.map((r) => ({ code: r.code, description: r.description, score: r.score, source: r.source }));
+    const { parsed } = await mockProvider.generateCoding(V6_NOTE, ctx);
+    const issues = validateResponse(parsed, V6_NOTE);
+    const cs = allCodes(parsed);
+    for (const c of cs) emittedCodes.add(c.toUpperCase());
+    console.log(`   rag hits=${ctx.length} primary=${parsed.primary_icd10.code}`);
+    check("primary A41.9 with real RAG context", parsed.primary_icd10.code === "A41.9", parsed.primary_icd10.code);
+    check("R65.21 present", has(cs, "R65.21"), cs.join(","));
+    check("N17.9 present", has(cs, "N17.9"), cs.join(","));
+    check("R65.21 never primary", parsed.primary_icd10.code !== "R65.21", parsed.primary_icd10.code);
+    check("no error-level issues", !issues.some((i) => i.level === "error"), JSON.stringify(issues));
+  }
+
+  {
+    console.log("\n▶ V6-3 — ulcer-only negative: no sepsis, ulcer stays primary even under RAG");
+    const note = "Chronic non-healing ulcer on the lateral aspect of the left ankle present for 3 months.";
+    const { parsed } = await mockProvider.generateCoding(note, V6_SIM_RAG);
+    const issues = validateResponse(parsed, note);
+    const cs = allCodes(parsed);
+    for (const c of cs) emittedCodes.add(c.toUpperCase());
+    console.log(`   primary=${parsed.primary_icd10.code} secondary=[${parsed.secondary_icd10.map((c) => c.code).join(", ")}]`);
+    check("primary L97.4 (ulcer keeps primary without sepsis)", parsed.primary_icd10.code === "L97.4", parsed.primary_icd10.code);
+    check("no R65.2- code", !cs.some((c) => c.startsWith("R65.2")), cs.join(","));
+    check("no A41.9", !has(cs, "A41.9"), cs.join(","));
+    check("no error-level issues", !issues.some((i) => i.level === "error"), JSON.stringify(issues));
+  }
 
   // ---- synthetic validation checks ----
   {
