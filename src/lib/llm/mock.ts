@@ -7,6 +7,14 @@ import {
   extractUnconfirmedDiagnoses,
   stripUnconfirmedDiagnoses,
 } from "@/lib/icd/unconfirmed";
+import {
+  detectEncounterType,
+  ENCOUNTER_CHAR,
+  ENCOUNTER_DESC,
+  type EncounterType,
+} from "@/lib/icd/encounter";
+import { detectResidualConditions, type ResidualHit } from "@/lib/icd/sequela";
+import { detectMedicationStatusCodes } from "@/lib/icd/medication-conditions";
 
 /**
  * Smart offline ICD-10-CM coder (v0.3).
@@ -862,7 +870,7 @@ const MOCK_RULES: MockRule[] = [
     confidence: 0.85,
   },
   {
-    keywords: ["from a ladder", "off a ladder", "ladder fall"],
+    keywords: ["from a ladder", "off a ladder", "ladder fall", "from ladder", "fall from ladder", "fell from ladder"],
     code: "W11.XXX{ENC}",
     description: "Fall on and from ladder, {ENC_DESC} encounter",
     level: "tertiary",
@@ -1138,28 +1146,6 @@ function detectLateralityScoped(text: string, keywords: string[]): Laterality {
   return "unspecified";
 }
 
-type EncounterType = "initial" | "subsequent" | "sequela";
-
-function detectEncounterType(text: string): EncounterType {
-  const t = text.toLowerCase();
-  if (
-    t.includes("sequela") || t.includes("late effect") || t.includes("residual") ||
-    t.includes("old injury") || t.includes("permanent damage from")
-  ) {
-    return "sequela";
-  }
-  if (
-    t.includes("follow-up") || t.includes("follow up") || t.includes("followup") ||
-    t.includes("recheck") || t.includes("suture removal") || t.includes("post-op") ||
-    t.includes("postop") || t.includes("post op") || t.includes("cast check") ||
-    t.includes("wound check") || t.includes("routine healing") || t.includes("return visit") ||
-    t.includes("review of") || t.includes("re-evaluation") || t.includes("reevaluation")
-  ) {
-    return "subsequent";
-  }
-  return "initial";
-}
-
 type Acuity = "acute" | "chronic" | "acute_on_chronic" | "unspecified";
 
 function detectAcuity(text: string): Acuity {
@@ -1180,18 +1166,6 @@ function detectAcuity(text: string): Acuity {
   }
   return "unspecified";
 }
-
-const ENCOUNTER_CHAR: Record<EncounterType, "A" | "D" | "S"> = {
-  initial: "A",
-  subsequent: "D",
-  sequela: "S",
-};
-
-const ENCOUNTER_DESC: Record<EncounterType, string> = {
-  initial: "initial",
-  subsequent: "subsequent",
-  sequela: "sequela",
-};
 
 /**
  * Resolve the {SIDE} placeholder in a code template.
@@ -1253,6 +1227,28 @@ function resolveTemplate(rule: MockRule, side: Laterality, enc: EncounterType): 
     description = "Unspecified acquired deformity of toe";
   }
 
+  // FY2026 M79.6 realignment (verified against the bundled DB): pain in arm
+  // is M79.601-3 and pain in leg is M79.604-6. The old M79.60/63 {SIDE}
+  // templates resolved to the wrong limbs (M79.601 = pain in right ARM).
+  if (rule.code === "M79.60{SIDE}") {
+    const limbMap: Record<Laterality, [string, string]> = {
+      right: ["M79.604", "Pain in right leg"],
+      left: ["M79.605", "Pain in left leg"],
+      bilateral: ["M79.606", "Pain in leg, unspecified"],
+      unspecified: ["M79.606", "Pain in leg, unspecified"],
+    };
+    [code, description] = limbMap[side];
+  }
+  if (rule.code === "M79.63{SIDE}") {
+    const armMap: Record<Laterality, [string, string]> = {
+      right: ["M79.601", "Pain in right arm"],
+      left: ["M79.602", "Pain in left arm"],
+      bilateral: ["M79.603", "Pain in arm, unspecified"],
+      unspecified: ["M79.603", "Pain in arm, unspecified"],
+    };
+    [code, description] = armMap[side];
+  }
+
   // {ENC} — external cause encounter character
   if (code.includes("{ENC}")) {
     code = code.replace("{ENC}", ENCOUNTER_CHAR[enc]);
@@ -1275,9 +1271,20 @@ function buildCodeDetail(
   // 7th char: rule default, overridden by detected encounter type for injury/external rules
   let seventh: ICDCodeDetail["seventh_character"] = "not_required";
   if (rule.requires_seventh_char) {
-    seventh = /[ADS]$/.test(resolved.code)
-      ? (resolved.code[resolved.code.length - 1] as "A" | "D" | "S")
+    seventh = /[ABCDGKPS]$/.test(resolved.code)
+      ? (resolved.code[resolved.code.length - 1] as ICDCodeDetail["seventh_character"])
       : rule.default_seventh_char ?? ENCOUNTER_CHAR[enc];
+    // Sprint 3 (idea B) — episode-of-care grammar: injury and external-cause
+    // templates hardcode the initial-encounter character. When the note
+    // documents a subsequent encounter or a sequela, the 7th character (and
+    // the code string itself) switches to D / S so the injury code and its
+    // external-cause code always share the SAME episode character.
+    if (seventh === "A" && enc !== "initial") {
+      seventh = ENCOUNTER_CHAR[enc];
+      resolved.code = resolved.code.slice(0, -1) + seventh;
+      const encounterPhrase = enc === "sequela" ? "sequela" : "subsequent encounter";
+      resolved.description = resolved.description.replace(/initial encounter/, encounterPhrase);
+    }
   }
 
   return {
@@ -1375,6 +1382,11 @@ export const mockProvider: LLMProvider = {
     const enc = detectEncounterType(text);
     const encChar = ENCOUNTER_CHAR[enc];
 
+    // Sprint 3 (idea G): medication-status Z-codes (Z79.- long-term use,
+    // Z88.- allergy status, Z51.81 drug level monitoring) detected up front
+    // so they can drive both the secondary list and primary promotion.
+    const medStatus = detectMedicationStatusCodes(text);
+
     // --- RAG boost map: code family -> best RAG score
     const ragBoost = new Map<string, number>();
     for (const r of ragContext ?? []) {
@@ -1431,6 +1443,7 @@ export const mockProvider: LLMProvider = {
     // --- 4. Select primary
     let primaryDetail: ICDCodeDetail;
     const primaryHits = hits.filter((h) => h.level === "primary");
+    const hasMockPrimary = primaryHits.length > 0;
 
     if (comboPrimary) {
       primaryDetail = buildCodeDetail(comboPrimary, text, enc, "chronic");
@@ -1499,6 +1512,25 @@ export const mockProvider: LLMProvider = {
       primaryDetail = fallback;
     }
 
+    // --- Sprint 3 (idea G): Z51.81 primary promotion. When the whole
+    // encounter is FOR therapeutic drug level monitoring and no acute
+    // complaint matched, the monitoring encounter is the reason for the
+    // visit and is sequenced first.
+    if (!hasMockPrimary && !comboPrimary && medStatus.some((f) => f.kind === "monitoring")) {
+      const mon = medStatus.find((f) => f.kind === "monitoring");
+      if (mon) {
+        primaryDetail = {
+          code: mon.code,
+          description: mon.description,
+          rationale: `Encounter for therapeutic drug level monitoring ("${mon.drug}"). This is the reason for the encounter and is sequenced first; underlying conditions are reported as secondary diagnoses.`,
+          confidence: 0.85,
+          laterality: "not_applicable",
+          acuity: "unspecified",
+          seventh_character: "not_required",
+        };
+      }
+    }
+
     // --- 4b. Open/closed fracture 7th character (Sprint 1, Idea B-lite) ---
     // Guideline (AHIMA/CMS): a fracture NOT stated as open or closed defaults
     // to CLOSED (A) — already our template default. When the note explicitly
@@ -1527,9 +1559,96 @@ export const mockProvider: LLMProvider = {
       };
     }
 
+    // --- 4c. Healing-complication 7th characters (Sprint 3, Idea B) ---
+    // For fracture categories, the subsequent-encounter 7th character also
+    // documents the healing phase: G = delayed healing, K = nonunion,
+    // P = malunion. When documented, these supersede the routine D (and any
+    // initial A/B/C) character.
+    const HEALING_COMPLICATIONS: { re: RegExp; ch: "G" | "K" | "P"; label: string; phrase: string }[] = [
+      {
+        re: /\bnon-?union\b|failed to (?:unite|heal)/i,
+        ch: "K",
+        label: "nonunion",
+        phrase: "subsequent encounter for closed fracture for nonunion",
+      },
+      {
+        re: /\bmalunion\b|healed (?:in a )?(?:crooked|bad|poor) (?:position|alignment)/i,
+        ch: "P",
+        label: "malunion",
+        phrase: "subsequent encounter for closed fracture for malunion",
+      },
+      {
+        re: /\bdelayed (?:healing|union)\b|slow (?:healing|to heal)/i,
+        ch: "G",
+        label: "delayed healing",
+        phrase: "subsequent encounter for closed fracture with delayed healing",
+      },
+    ];
+    if (FRACTURE_PREFIX_RE.test(primaryDetail.code) && /[ABCD]$/.test(primaryDetail.code)) {
+      const hc = HEALING_COMPLICATIONS.find((h) => h.re.test(text));
+      if (hc) {
+        primaryDetail = {
+          ...primaryDetail,
+          code: primaryDetail.code.slice(0, -1) + hc.ch,
+          seventh_character: hc.ch as ICDCodeDetail["seventh_character"],
+          description: primaryDetail.description.replace(
+            /initial encounter( for closed fracture)?|subsequent encounter( for closed fracture)?/,
+            hc.phrase
+          ),
+          rationale:
+            primaryDetail.rationale +
+            ` Note documents a healing complication (${hc.label}) — 7th character updated to ${hc.ch}.`,
+        };
+      }
+    }
+
+    // --- 4d. Sequela dual-coding (Sprint 3, Idea C) — ICD-10-CM Official
+    // Guidelines I.C.19.2: when a sequela is documented, the code for the
+    // RESIDUAL condition is sequenced FIRST and the original injury code
+    // (7th character "S") follows. When the note documents a residual
+    // complaint (pain, stiffness, numbness, scar, …), restructure the
+    // response accordingly.
+    let sequelaInjurySecondary: ICDCodeDetail | null = null;
+    const sequelaExtraResiduals: ICDCodeDetail[] = [];
+    if (enc === "sequela" && /^[ST]/.test(primaryDetail.code) && /S$/.test(primaryDetail.code)) {
+      const residuals = detectResidualConditions(
+        text,
+        (k) => keywordPresentNotNegated(text, k),
+        (kws) => detectLateralityScoped(text, kws)
+      ).slice(0, 2);
+      if (residuals.length > 0) {
+        const buildResidual = (r: ResidualHit, lead: boolean): ICDCodeDetail => ({
+          code: r.code,
+          description: r.description,
+          rationale: lead
+            ? `Sequela encounter: the residual condition ("${r.id}") is sequenced FIRST, followed by the original injury code with 7th character "S" — both codes are required per ICD-10-CM Official Guidelines I.C.19.2 (Sequela).`
+            : `Additional documented residual condition of the sequela episode ("${r.id}"), reported alongside the injury code with 7th character "S" per I.C.19.2.`,
+          confidence: r.confidence,
+          laterality: r.side === "unspecified" ? "unspecified" : r.side,
+          acuity: "chronic",
+          seventh_character: "not_required",
+        });
+        const injury = primaryDetail;
+        primaryDetail = buildResidual(residuals[0], true);
+        sequelaInjurySecondary = {
+          ...injury,
+          rationale:
+            injury.rationale +
+            " Sequela dual-coding: this injury carries 7th character S; the residual condition is sequenced first per ICD-10-CM Official Guidelines I.C.19.2.",
+        };
+        if (residuals[1]) sequelaExtraResiduals.push(buildResidual(residuals[1], false));
+      }
+    }
+
     // --- 5. Build secondary list
     const secondaryDetails: ICDCodeDetail[] = [];
     const primaryFam = familyOf(primaryDetail.code);
+
+    // 5-lead. Sequela dual-coding placement (Sprint 3, idea C): extra
+    // residual conditions and the S-tagged injury code lead the secondary
+    // list (residual BEFORE injury, per I.C.19.2).
+    for (const rd of sequelaExtraResiduals) secondaryDetails.push(rd);
+    if (sequelaInjurySecondary) secondaryDetails.push(sequelaInjurySecondary);
 
     // 5a. ulcer site code moves to secondary when combo primary used
     if (comboPrimary) {
@@ -1601,6 +1720,30 @@ export const mockProvider: LLMProvider = {
       });
     }
 
+    // --- 5e. Medication-status Z-codes (Sprint 3, idea G): long-term
+    // therapy (Z79.-), drug-allergy status (Z88.-) and therapeutic drug
+    // level monitoring (Z51.81) are reported as secondary diagnoses when
+    // they affect patient care (I.C.21.c).
+    const medDetails: ICDCodeDetail[] = medStatus.map((f) => ({
+      code: f.code,
+      description: f.description,
+      rationale:
+        f.kind === "long_term"
+          ? `Long-term medication documented in the note ("${f.drug}"). Long-term (current) drug therapy codes (Z79.-) are reported as secondary diagnoses because the therapy affects patient care.`
+          : f.kind === "allergy"
+            ? `Drug allergy documented in the note ("${f.drug}"). Personal-history allergy status codes (Z88.-) alert downstream providers and must be reported.`
+            : `Therapeutic drug level monitoring documented in the note ("${f.drug}") — Z51.81 encounter code.`,
+      confidence: 0.85,
+      laterality: "not_applicable" as const,
+      acuity: (f.kind === "long_term" ? "chronic" : "unspecified") as ICDCodeDetail["acuity"],
+      seventh_character: "not_required" as const,
+    }));
+    for (const d of medDetails) {
+      if (d.code !== primaryDetail.code && !secondaryDetails.some((s) => s.code === d.code)) {
+        secondaryDetails.push(d);
+      }
+    }
+
     // --- 6. Tertiary (supplemental): external causes, activity, place, symptoms
     const tertiaryHits = hits.filter((x) => x.level === "tertiary");
     // Most specific (longest matched keyword) first, so the mechanism dedupe
@@ -1656,6 +1799,11 @@ export const mockProvider: LLMProvider = {
         type: "chronic_condition" as const,
         value: h.code,
       })),
+      ...medStatus.map((f) => ({
+        entity: f.drug,
+        type: "medication" as const,
+        value: f.code,
+      })),
       ...hits
         .filter((h) => h.level === "tertiary")
         .map((h) => ({
@@ -1681,6 +1829,10 @@ export const mockProvider: LLMProvider = {
         `Supplemental: ${dedupedTertiary.length} external cause / supporting code(s). ` +
         `Matched from a built-in library of ${MOCK_RULES.length} clinical patterns with negation-aware matching. ` +
         `History codes applied: ${historyRes.findings.length}. ` +
+        `Medication status codes applied: ${medStatus.length} (Z79/Z88/Z51.81). ` +
+        (enc === "sequela" && sequelaInjurySecondary
+          ? "Sequela dual-coding applied (residual condition first, injury code with 7th character S second). "
+          : "") +
         `Unconfirmed outpatient language excluded: ${unconfirmedSpans.length > 0 ? unconfirmedSpans.map((u) => `"${u.phrase}"`).join("; ") : "none"}.`,
       entities_extracted: entities,
     };

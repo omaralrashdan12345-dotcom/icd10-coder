@@ -23,6 +23,9 @@ import type {
 import { BUILTIN_ICD10, CODE_FIRST_RULES } from "./data";
 import { CHRONIC_CONDITION_MATCHERS } from "./chronic-conditions";
 import { extractUnconfirmedDiagnoses } from "./unconfirmed";
+import { detectEncounterType } from "./encounter";
+import { isSequelaInjuryCode, isResidualCode, detectResidualConditions } from "./sequela";
+import { detectMedicationStatusCodes } from "./medication-conditions";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -336,6 +339,139 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
   //    characters, incomplete external-cause codes, invalid 7th chars,
   //    3-char codes with known subdivided children.
   issues.push(...formatIssues(codes));
+
+  // 10. Episode-of-care 7th-character grammar (Sprint 3, Idea B).
+  //     a) the note's encounter type must match the injury code's 7th
+  //        character (follow-up -> D, sequela -> S, ER/initial -> A);
+  //     b) within one encounter, the injury code and its external-cause
+  //        code must carry the SAME episode character.
+  if (clinicalNote) {
+    const enc = detectEncounterType(clinicalNote);
+    const char7 = (c: string) => (c.length >= 7 ? c[c.length - 1].toUpperCase() : "");
+    const injuryEntries = codes.filter(
+      ({ code }) => /^[ST]/.test(code.code) && !/^T3[0-2]/.test(code.code)
+    );
+    const extEntries = codes.filter(({ code }) => isExternalCause(code.code));
+    if (enc !== "initial") {
+      const expected = enc === "subsequent" ? "D" : "S";
+      const expectedDesc =
+        enc === "subsequent"
+          ? "subsequent encounter (follow-up / cast check / wound check)"
+          : "sequela encounter (late effect / residual condition)";
+      for (const { code, level } of injuryEntries) {
+        if (char7(code.code) === "A") {
+          issues.push({
+            level: "warning",
+            code: code.code,
+            rule: "SEVENTH_CHAR_EPISODE",
+            message_en: `The note documents a ${expectedDesc}, but injury code ${code.code} (${level}) ends with 7th character "A" (initial encounter). Injury and external-cause codes must reflect the correct episode of care or the claim will be adjudicated as an inconsistent episode.`,
+            message_ar: `يُوثّق النص زيارة ${enc === "subsequent" ? "متابعة" : "مضاعفات لاحقة"}، لكن رمز الإصابة ${code.code} (${level}) ينتهي بالحرف السابع "A" (الزيارة الأولى). يجب أن تعكس رموز الإصابة والأسباب الخارجية نوع الزيارة الصحيح وإلا سُيُرفضت المطالبة كحلقة غير متسقة.`,
+            suggestion_en: `Replace the 7th character with "${expected}", e.g. ${stem(code.code)}${expected}.`,
+            suggestion_ar: `استبدل الحرف السابع بـ "${expected}"، مثال: ${stem(code.code)}${expected}.`,
+          });
+        }
+      }
+    }
+    const injChars = new Set(
+      injuryEntries.map(({ code }) => char7(code.code)).filter((ch) => /[ABCDGKPS]/.test(ch))
+    );
+    const extChars = new Set(
+      extEntries.map(({ code }) => char7(code.code)).filter((ch) => /[ABCDGKPS]/.test(ch))
+    );
+    if (injChars.size > 0 && extChars.size > 0 && ![...injChars].some((ch) => extChars.has(ch))) {
+      issues.push({
+        level: "warning",
+        rule: "SEVENTH_CHAR_MISMATCH",
+        message_en: `Episode-of-care mismatch: injury code 7th character(s) ${[...injChars].join("/")} vs external-cause 7th character(s) ${[...extChars].join("/")}. Within one encounter, the injury code and its external-cause code must carry the SAME 7th character (A/B/D/G/K/P/S).`,
+        message_ar: `عدم تطابق نوع الزيارة: الحرف السابع لرمز الإصابة ${[...injChars].join("/")} بينما رمز السبب الخارجي ${[...extChars].join("/")}. في نفس الزيارة يجب أن يحمل رمز الإصابة ورمز السبب الخارجي نفس الحرف السابع.`,
+        suggestion_en: `Align the 7th characters of the injury and external-cause codes to the same episode of care.`,
+        suggestion_ar: `وحّد الحرف السابع لرموز الإصابة والأسباب الخارجية على نفس نوع الزيارة.`,
+      });
+    }
+  }
+
+  // 11. Sequela dual-coding (Sprint 3, Idea C) — Official Guidelines I.C.19.2:
+  //     the residual condition is sequenced FIRST, then the injury code with
+  //     7th character "S".
+  const sequelaEntries = codes.filter(({ code }) => isSequelaInjuryCode(code.code));
+  if (sequelaEntries.length > 0) {
+    const firstSequelaIdx = codes.findIndex(({ code }) => isSequelaInjuryCode(code.code));
+    const firstResidualIdx = codes.findIndex(({ code }) => isResidualCode(code.code));
+    if (firstResidualIdx >= 0) {
+      if (firstResidualIdx < firstSequelaIdx) {
+        issues.push({
+          level: "info",
+          rule: "SEQUELA_DUAL_CODE_OK",
+          message_en: `Sequela dual-coding correctly applied: the residual condition is sequenced BEFORE the injury code with 7th character "S" (${sequelaEntries.map((c) => c.code.code).join(", ")}), per ICD-10-CM Official Guidelines I.C.19.2.`,
+          message_ar: `تم تطبيق الترميز المزدوج للمضاعفات بشكل صحيح: الحالة المتبقية مُسردة قبل رمز الإصابة ذي الحرف السابع "S"، وفق القسم I.C.19.2 من الدليل الرسمي.`,
+        });
+      } else {
+        issues.push({
+          level: "warning",
+          code: sequelaEntries[0].code.code,
+          rule: "SEQUELA_ORDER",
+          message_en: `Sequela sequencing: the RESIDUAL condition must be listed FIRST, followed by the injury code with 7th character "S". Currently the S-tagged injury code (${sequelaEntries.map((c) => c.code.code).join(", ")}) appears before the residual-condition code.`,
+          message_ar: `ترتيب المضاعفات: يجب إدراج الحالة المتبقية أولاً ثم رمز الإصابة ذا الحرف السابع "S". حالياً يظهر رمز الإصابة قبل رمز الحالة المتبقية.`,
+          suggestion_en: `Move the residual-condition code (e.g. chronic pain, stiffness) ahead of the S-tagged injury code.`,
+          suggestion_ar: `انقل رمز الحالة المتبقية (مثل الألم المزمن أو التيبس) ليسبق رمز الإصابة ذا الحرف S.`,
+        });
+      }
+    } else if (clinicalNote) {
+      const residualsInNote = detectResidualConditions(
+        clinicalNote,
+        (k) => keywordPresentNotNegated(clinicalNote, k),
+        () => "unspecified"
+      );
+      if (residualsInNote.length > 0) {
+        issues.push({
+          level: "warning",
+          code: sequelaEntries[0].code.code,
+          rule: "SEQUELA_RESIDUAL_MISSING",
+          message_en: `The injury code ${sequelaEntries[0].code.code} uses 7th character "S" (sequela) and the note documents residual condition(s) (${residualsInNote.map((r) => r.id).join(", ")}). Per I.C.19.2, TWO codes are required: the residual condition sequenced FIRST, then the S-tagged injury code.`,
+          message_ar: `رمز الإصابة ${sequelaEntries[0].code.code} يحمل الحرف السابع "S" والملاحظة توثّق حالة متبقية. وفق I.C.19.2 يلزم رمزان: الحالة المتبقية أولاً ثم رمز الإصابة.`,
+          suggestion_en: `Add the residual-condition code first, e.g. ${residualsInNote[0].code} (${residualsInNote[0].description}), keeping ${sequelaEntries[0].code.code} second.`,
+          suggestion_ar: `أضف رمز الحالة المتبقية أولاً، مثال: ${residualsInNote[0].code}، مع إبقاء ${sequelaEntries[0].code.code} ثانياً.`,
+        });
+      }
+    }
+  }
+
+  // 12. Medication-status Z-codes (Sprint 3, Idea G) — Official Guidelines
+  //     I.C.21.c: long-term drug therapy (Z79.-) and drug-allergy status
+  //     (Z88.-) affect patient care and must be reported; therapeutic drug
+  //     level monitoring encounters take Z51.81.
+  if (clinicalNote) {
+    const expectedMeds = detectMedicationStatusCodes(clinicalNote);
+    for (const f of expectedMeds) {
+      const present = codes.some(({ code }) => code.code.toUpperCase().startsWith(f.code));
+      if (present) continue;
+      const ruleId =
+        f.kind === "long_term"
+          ? "MED_ZCODE_MISSING"
+          : f.kind === "allergy"
+            ? "ALLERGY_ZCODE_MISSING"
+            : "DRUG_MONITORING_MISSING";
+      issues.push({
+        level: "warning",
+        code: f.code,
+        rule: ruleId,
+        message_en:
+          f.kind === "long_term"
+            ? `The note documents long-term use of "${f.drug}", but no ${f.code} (${f.description}) code was assigned. Long-term (current) drug therapy affects patient care and must be reported as a secondary diagnosis (I.C.21.c).`
+            : f.kind === "allergy"
+              ? `The note documents a drug allergy ("${f.drug}"), but no ${f.code} (${f.description}) code was assigned. Allergy status must be reported so downstream providers avoid the drug.`
+              : `The note documents therapeutic drug level monitoring ("${f.drug}"), but no Z51.81 (Encounter for therapeutic drug level monitoring) code was assigned.`,
+        message_ar:
+          f.kind === "long_term"
+            ? `يُوثّق النص استخدام دواء طويل الأمد ("${f.drug}") لكن لم يُسند رمز ${f.code}. العلاج الدوائي طويل الأمد يؤثر على رعاية المريض ويجب إبلاغه كتشخيص ثانوي.`
+            : f.kind === "allergy"
+              ? `يُوثّق النص حساسية دوائية ("${f.drug}") لكن لم يُسند رمز ${f.code}. يجب إبلاغ حالة الحساسية لتفادي الدواء مستقبلاً.`
+              : `يُوثّق النص متابعة مستوى دوائي ("${f.drug}") لكن لم يُسند رمز Z51.81 (زيارة لمتابعة مستوى الدواء العلاجي).`,
+        suggestion_en: `Add ${f.code} (${f.description}) to Secondary Diagnoses.`,
+        suggestion_ar: `أضف ${f.code} إلى التشخيصات الثانوية.`,
+      });
+    }
+  }
 
   return issues;
 }
