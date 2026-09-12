@@ -1421,13 +1421,6 @@ export const mockProvider: LLMProvider = {
     // acute organ dysfunction stays plain sepsis.
     const severeSepsis = detectSevereSepsis(text);
 
-    // Early sepsis-context flag (Sprint-5 issue V6 fix). Reused by the
-    // section-4 scoring guard (a chronic skin-ulcer family must not use the
-    // RAG bonus to outrank an acute sepsis code) and by section 5d
-    // (underlying-infection sequencing).
-    const SEPSIS_DOCUMENTED = ["sepsis", "septicemia", "septic shock", "bacteremia", "urosepsis"]
-      .some((k) => keywordPresentNotNegated(text, k));
-
     // When I69.- late-effect codes take over, Z86.73 ("personal history of
     // TIA and cerebral infarction WITHOUT residual deficits") must NOT be
     // reported alongside them — filter it from every history source.
@@ -1526,12 +1519,7 @@ export const mockProvider: LLMProvider = {
           .filter((k) => keywordPresentNotNegated(text, k))
           .reduce((a, b) => (b.length > a.length ? b : a), "");
         const fam = familyOf(fillSide(rule.code.replace(/\{ENC\}|\{LOC\}/g, "A"), detectLaterality(text)));
-        // Sprint-5 issue V6 fix: when sepsis is documented, a chronic
-        // skin-ulcer family (L89/L97/L98) must not use the RAG bonus to
-        // outrank the acute sepsis code — the ulcer is demoted to a secondary
-        // source-of-infection diagnosis instead (section 5a-ulcer-source).
-        let rag = ragBoost.get(fam) ?? 0;
-        if (SEPSIS_DOCUMENTED && (fam === "L89" || fam === "L97" || fam === "L98")) rag = 0;
+        const rag = ragBoost.get(fam) ?? 0;
         const spec = Math.min(1.5, matchedKw.length / 12); // longer keyword = more specific
         const inj = rule.code.startsWith("S") || rule.code.startsWith("T") ? 2 : 0;
         // R-chapter symptom codes are diagnoses of exclusion — when a
@@ -1818,25 +1806,6 @@ export const mockProvider: LLMProvider = {
     // A41.9 follows the T81.44 complication code directly.
     for (const sd of complicationSecondaries) secondaryDetails.push(sd);
 
-    // 5a-ulcer-source. Skin-ulcer source sideline (Sprint-5 issue V6 fix):
-    // when an acute sepsis presentation wins the primary slot, a matched
-    // chronic skin-ulcer rule (L89/L97/L98) is the documented epithelial
-    // source of the infection — demote it to a secondary diagnosis so the
-    // source stays visible. Skipped when the diabetic E11.621 combo already
-    // moved the ulcer to secondary (5a below); the final section-8 pass
-    // dedupes by exact code.
-    if (primaryDetail.code.startsWith("A41") && !comboPrimary) {
-      const ulcerSource = hits.find(
-        (h) => h.level === "primary" && /^L(89|97|98)/.test(h.code)
-      );
-      if (ulcerSource) {
-        const ulcerDetail = buildCodeDetail(ulcerSource, text, enc, "chronic");
-        if (!secondaryDetails.some((s) => s.code === ulcerDetail.code)) {
-          secondaryDetails.push(ulcerDetail);
-        }
-      }
-    }
-
     // 5a. ulcer site code moves to secondary when combo primary used
     if (comboPrimary) {
       const ulcerRule = hits.find((h) => h.level === "primary" && h.code.startsWith("L97"));
@@ -1877,7 +1846,8 @@ export const mockProvider: LLMProvider = {
     // underlying infection, then the sepsis code). When the note documents
     // sepsis together with an identifiable infection source, the infection
     // keeps the primary position and A41.9 is added as a secondary.
-    // (SEPSIS_DOCUMENTED is computed up front for the section-4 scoring guard.)
+    const SEPSIS_DOCUMENTED = ["sepsis", "septicemia", "septic shock", "bacteremia", "urosepsis"]
+      .some((k) => keywordPresentNotNegated(text, k));
     const SEPSIS_SOURCES = [
       "urinary tract infection", "uti", "pneumonia", "appendicitis", "cholecystitis",
       "diverticulitis", "cellulitis", "osteomyelitis", "pyelonephritis", "infected wound",
