@@ -27,8 +27,9 @@ import { detectEncounterType } from "./encounter";
 import { isSequelaInjuryCode, isResidualCode, detectResidualConditions } from "./sequela";
 import { detectMedicationStatusCodes } from "./medication-conditions";
 import { detectStrokeSequela } from "./stroke-sequela";
-import { isComplicationCode } from "./procedure-complications";
+import { isComplicationCode, complicationEpisode } from "./procedure-complications";
 import { detectSevereSepsis, isOrganDysfunctionCode } from "./severe-sepsis";
+import { OFFICIAL_POISONING_DIGIT_STEMS } from "./poisoning-stems";
 
 /**
  * ICD-10-CM code categories that ALWAYS require a 7th character.
@@ -245,6 +246,18 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
   // 3. Low-confidence flag
   for (const { code, level } of codes) {
     if (typeof code.confidence === "number" && code.confidence < 0.6) {
+      // v0.9.1 noise trim: the R69 fallback is a DETERMINISTIC engine output
+      // when the mechanism is documented but no injury/condition is — a
+      // paired external-cause code (e.g. W10.8XXA fall down stairs) proves
+      // a specific mechanism rule matched, so the blanket "review" flag on
+      // R69 is noise there. R69 WITHOUT any external cause (nothing matched
+      // at all) keeps the warning.
+      if (
+        code.code.toUpperCase() === "R69" &&
+        codes.some(({ code: oc }) => isExternalCause(oc.code))
+      ) {
+        continue;
+      }
       issues.push({
         level: "warning",
         code: code.code,
@@ -366,8 +379,18 @@ export function validateResponse(resp: ClinicalCodingResponse, clinicalNote?: st
         enc === "subsequent"
           ? "subsequent encounter (follow-up / cast check / wound check)"
           : "sequela encounter (late effect / residual condition)";
+      // v0.9.1: T80-T88 complication codes follow the COMPLICATION episode
+      // grammar (complicationEpisode), not the generic injury grammar —
+      // ACTIVE treatment of a postprocedural complication is "initial
+      // encounter" (A) even when the note mentions post-op day N (sprint5
+      // K5: "postoperative sepsis on post-op day 3" -> T81.44XA is correct).
+      // The engine already uses complicationEpisode to pick the character;
+      // warn only when the complication grammar itself disagrees with the
+      // assigned code (e.g. an A-coded T81.4- on a true follow-up note).
+      const compEp = complicationEpisode(clinicalNote);
       for (const { code, level } of injuryEntries) {
         if (char7(code.code) === "A") {
+          if (isComplicationCode(code.code) && compEp === "A") continue;
           issues.push({
             level: "warning",
             code: code.code,
@@ -834,8 +857,17 @@ function formatIssues(codes: { code: ICDCodeDetail; level: string }[]): Validati
       });
     }
 
-    // I.2 T36-T50 poisoning codes must use the placeholder X in the 5th position
-    if (/^T(?:3[6-9]|4[0-9]|50)\./.test(c) && /^T(?:3[6-9]|4[0-9]|50)\.\d{2}/.test(stem)) {
+    // I.2 T36-T50 poisoning codes must use the placeholder X in the 5th
+    // position — UNLESS the 5th character is a real subdivision digit of an
+    // official family (FY2024+ restructures: T40.41- synthetic narcotics,
+    // T40.42- tramadol, T43.21-, T50.90- unspecified drugs, ...). The set is
+    // GENERATED from the bundled CDC extract (scripts/gen-poisoning-stems.mjs)
+    // and sprint8 guards it against extract drift.
+    if (
+      /^T(?:3[6-9]|4[0-9]|50)\./.test(c) &&
+      /^T(?:3[6-9]|4[0-9]|50)\.\d{2}/.test(stem) &&
+      !OFFICIAL_POISONING_DIGIT_STEMS.has(c.slice(0, 6))
+    ) {
       issues.push({
         level: "warning",
         code: c,

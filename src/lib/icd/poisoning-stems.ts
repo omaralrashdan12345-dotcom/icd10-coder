@@ -1,0 +1,132 @@
+/**
+ * OFFICIAL T36-T50 poisoning stems whose 5th character is a REAL subdivision
+ * digit (not a placeholder X). GENERATED from the bundled CDC/NCHS FY2027
+ * extract (public/icd10cm) — do not hand-edit; regenerate at each fiscal
+ * year refresh with:
+ *
+ *   node scripts/gen-poisoning-stems.mjs
+ *
+ * Purpose (v0.9.1): the POISONING_PLACEHOLDER_X format check flags codes
+ * shaped "Txx.dd" (two digits at positions 5-6) as missing the placeholder
+ * X. That is correct for typos (T39.12A should be T39.1X1A) but WRONG for
+ * the official families whose substance subdivision occupies the 5th
+ * character — FY2024+ restructures such as T40.41- (synthetic narcotics),
+ * T40.42- (tramadol), T43.21- (SSRI + intent), T50.90- (unspecified
+ * drugs) — where T40.411A / T50.901A / T43.211A are the official shapes.
+ * The validator consults this set and skips the advisory when the code's
+ * 5-character prefix is an official digit stem.
+ *
+ * Regeneration identity guarded by regression sprint8: the embedded set
+ * must always equal the set recomputed from the bundled extract.
+ */
+
+export const POISONING_STEMS_SOURCE_FY = 2027;
+
+export const OFFICIAL_POISONING_DIGIT_STEMS: ReadonlySet<string> = new Set([
+  "T36.91",
+  "T36.92",
+  "T36.93",
+  "T36.94",
+  "T36.95",
+  "T36.96",
+  "T37.91",
+  "T37.92",
+  "T37.93",
+  "T37.94",
+  "T37.95",
+  "T37.96",
+  "T38.80",
+  "T38.81",
+  "T38.89",
+  "T38.90",
+  "T38.99",
+  "T39.01",
+  "T39.09",
+  "T39.31",
+  "T39.39",
+  "T39.91",
+  "T39.92",
+  "T39.93",
+  "T39.94",
+  "T39.95",
+  "T39.96",
+  "T40.41",
+  "T40.42",
+  "T40.49",
+  "T40.60",
+  "T40.69",
+  "T40.71",
+  "T40.72",
+  "T40.90",
+  "T40.99",
+  "T41.20",
+  "T41.29",
+  "T41.41",
+  "T41.42",
+  "T41.43",
+  "T41.44",
+  "T41.45",
+  "T41.46",
+  "T42.71",
+  "T42.72",
+  "T42.73",
+  "T42.74",
+  "T42.75",
+  "T42.76",
+  "T43.01",
+  "T43.02",
+  "T43.20",
+  "T43.21",
+  "T43.22",
+  "T43.29",
+  "T43.50",
+  "T43.59",
+  "T43.60",
+  "T43.61",
+  "T43.62",
+  "T43.63",
+  "T43.64",
+  "T43.65",
+  "T43.69",
+  "T43.91",
+  "T43.92",
+  "T43.93",
+  "T43.94",
+  "T43.95",
+  "T43.96",
+  "T44.90",
+  "T44.99",
+  "T45.51",
+  "T45.52",
+  "T45.60",
+  "T45.61",
+  "T45.62",
+  "T45.69",
+  "T45.91",
+  "T45.92",
+  "T45.93",
+  "T45.94",
+  "T45.95",
+  "T45.96",
+  "T46.90",
+  "T46.99",
+  "T47.91",
+  "T47.92",
+  "T47.93",
+  "T47.94",
+  "T47.95",
+  "T47.96",
+  "T48.20",
+  "T48.29",
+  "T48.90",
+  "T48.99",
+  "T49.91",
+  "T49.92",
+  "T49.93",
+  "T49.94",
+  "T49.95",
+  "T49.96",
+  "T50.90",
+  "T50.91",
+  "T50.99",
+]);
