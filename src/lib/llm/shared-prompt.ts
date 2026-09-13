@@ -41,6 +41,7 @@ INJURY CODING — when the chief complaint is an injury (laceration, contusion, 
 - The external cause code (V/W/X/Y) MUST be reported and goes in TERTIARY (e.g. W55.03XA = other contact with cat, W19.XXXA = unspecified fall, W54.0XXA = bitten by dog, V89.2XXA = unspecified MVA — all initial encounter). NEVER output an external cause (V/W/X/Y) as Primary or Secondary — official ICD-10-CM guidelines (Chapter 20) forbid that; external cause codes are supplemental and always come last.
 - The external cause's 7th character MUST match the injury code's 7th character (A/D/S). A fracture (S52.x) with 7th char A gets "A" on its W19 fall code; a subsequent encounter "D" gets "D" on the fall code.
 - For an injury with no documented mechanism, use W19.XXXA (unspecified fall) with the matching 7th char ONLY when a fall is plausible; otherwise omit the external cause and flag it in the rationale.
+- POISONING / TOXIC EFFECTS exception: for T36-T65 primaries the intent (accidental / self-harm / assault / undetermined) is already encoded in the code's 5th/6th character — do NOT add a V/W/X/Y external cause unless the note documents a distinct injury event (e.g. a fall); a generic W19 fall code on an overdose or envenomation encounter is WRONG.
 - Both the injury code AND the external cause code require a 7th character (A/D/S).
 Example: "cat scratch on right lower leg, ER visit today"
   Primary: S81.811A   (laceration, right lower leg, initial encounter)

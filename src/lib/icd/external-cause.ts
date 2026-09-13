@@ -40,6 +40,24 @@ function isExternalCauseCode(code: string): boolean {
 }
 
 /**
+ * T36-T65 (poisoning T36-T50, toxic effects T51-T65) carry the EXTERNAL-CAUSE
+ * INTENT inside the code itself: the 5th/6th character encodes accidental /
+ * intentional self-harm / assault / undetermined, and the 7th character the
+ * encounter. FY2027 Official Guidelines (I.C.19.b, I.C.20): Chapter 20
+ * reporting is not nationally required, and external-cause status (Y99) is
+ * explicitly "not applicable to poisonings, adverse effects, misadventures or
+ * late effects" — the intent character IS the external-cause coding
+ * (established in v0.8.2: no X/Y externals are emitted alongside T36-T50).
+ *
+ * Forcing the generic W19.XXXA "unspecified fall" fallback onto such
+ * encounters fabricated a fall that never happened (v0.9.1 documented nuance:
+ * live D1/D3/D5 carried W19@0.5 + LOW_CONFIDENCE purely from this path).
+ */
+export function isIntentBearingToxicEffect(code: string): boolean {
+  return /^T(3[6-9]|4\d|5\d|6[0-5])/.test(code.toUpperCase());
+}
+
+/**
  * Ensure every injury encounter reports an external cause code.
  * Mutation strategy: returns a NEW tertiary array; the caller decides how to merge.
  */
@@ -50,6 +68,10 @@ export function computeExternalCause(
   note: string
 ): ICDCodeDetail | null {
   if (!isInjuryCode(primary.code)) return null;
+  // Poisoning / toxic-effect primaries: the intent character already IS the
+  // external-cause coding — never fabricate a V/W/X/Y supplement (esp. the
+  // W19 "unspecified fall" fallback) for these encounters.
+  if (isIntentBearingToxicEffect(primary.code)) return null;
   // Already has an external cause code anywhere? Nothing to add.
   const allCodes = [primary, ...(secondary ?? []), ...(tertiary ?? [])];
   if (allCodes.some((d) => isExternalCauseCode(d.code))) return null;

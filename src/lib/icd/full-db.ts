@@ -67,6 +67,18 @@ const CHUNK_URL = (file: string) => `/icd10cm/${file}`;
 const NLM_API = "https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search";
 const NLM_PAGE = 500;
 const NLM_DELAY_MS = 130;
+
+/**
+ * Live-refresh hardening (v0.10.0): plausible dataset-size bounds. The NLM
+ * full-dump (`terms=*`) mirrors the official reportable codes file — FY2027
+ * carries 74,879 billable codes and the count moves by a few hundred per
+ * fiscal year at most. A pull outside this band (degraded upstream, filtered
+ * dump, wrong endpoint) must NEVER replace a good local dataset.
+ */
+const MIN_EXPECTED_CODES = 70_000;
+const MAX_EXPECTED_CODES = 120_000;
+/** Per-request timeout for a single NLM page (retries still apply). */
+const NLM_PAGE_TIMEOUT_MS = 15_000;
 const INDEX_SLICE = 4000; // docs per time-slice when building the search index
 
 const status: FullDbStatus = {
@@ -129,14 +141,6 @@ function idbGet<T>(db: IDBDatabase, store: string, key: string): Promise<T | und
   });
 }
 
-function idbSet(db: IDBDatabase, store: string, key: string, value: unknown): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, "readwrite");
-    tx.objectStore(store).put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
 
 function idbGetAll<T>(db: IDBDatabase, store: string): Promise<T[]> {
   return new Promise((resolve, reject) => {
@@ -152,6 +156,33 @@ async function idbClear(db: IDBDatabase, store: string): Promise<void> {
     const tx = db.transaction(store, "readwrite");
     tx.objectStore(store).clear();
     tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Replace the whole dataset (chunks + meta) in ONE atomic IndexedDB
+ * transaction. v0.10.0 hardening: the previous clear-then-write sequence
+ * spanned many separate transactions, so an interrupted refresh (tab close,
+ * crash, quota error) could persist a partial chunk set next to a STALE meta
+ * record — which the seeder would then trust and load a truncated dataset as
+ * "ready". IndexedDB transactions are all-or-nothing: either the new dataset
+ * and its meta commit together, or the previous complete dataset survives.
+ */
+function idbSwapDataset(
+  db: IDBDatabase,
+  entries: { key: string; chunk: ChunkShape }[],
+  meta: StoredMeta
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_CHUNKS, STORE_META], "readwrite");
+    tx.objectStore(STORE_CHUNKS).clear();
+    for (const { key, chunk } of entries) {
+      tx.objectStore(STORE_CHUNKS).put(chunk, key);
+    }
+    tx.objectStore(STORE_META).put(meta, "meta");
+    tx.oncomplete = () => resolve();
+    tx.onabort = () => reject(tx.error ?? new Error("dataset swap aborted"));
     tx.onerror = () => reject(tx.error);
   });
 }
@@ -310,12 +341,15 @@ async function loadChunksFromIdb(db: IDBDatabase): Promise<ChunkShape[]> {
 }
 
 async function downloadAndStoreBundled(db: IDBDatabase, manifest: Manifest): Promise<void> {
-  await idbClear(db, STORE_CHUNKS);
-  const chunks: ChunkShape[] = [];
+  // v0.10.0: fetch EVERYTHING before touching the stored dataset, then swap
+  // atomically. A failed chunk fetch now leaves the previous dataset intact.
+  const fetched: { key: string; chunk: ChunkShape }[] = [];
   for (const c of manifest.chunks) {
-    const data = await fetchJson<ChunkShape>(CHUNK_URL(c.file));
-    chunks.push(data);
-    await idbSet(db, STORE_CHUNKS, c.file, data);
+    fetched.push({ key: c.file, chunk: await fetchJson<ChunkShape>(CHUNK_URL(c.file)) });
+  }
+  const fetchedRows = fetched.reduce((n, f) => n + f.chunk.codes.length, 0);
+  if (fetchedRows !== manifest.total) {
+    throw new Error(`bundled seed integrity failure: chunks carry ${fetchedRows} rows, manifest says ${manifest.total} — keeping previous dataset`);
   }
   const meta: StoredMeta = {
     version: manifest.generatedAt,
@@ -324,8 +358,8 @@ async function downloadAndStoreBundled(db: IDBDatabase, manifest: Manifest): Pro
     total: manifest.total,
     billable: manifest.billable,
   };
-  await idbSet(db, STORE_META, "meta", meta);
-  loadIntoMemory(chunks);
+  await idbSwapDataset(db, fetched, meta);
+  loadIntoMemory(fetched.map((f) => f.chunk));
   status.source = "bundled";
   status.version = manifest.generatedAt;
   status.total = manifest.total;
@@ -355,10 +389,17 @@ export function ensureFullDbSeeded(): Promise<void> {
       // Fetch the bundled manifest to compare versions (cheap).
       const manifest = await fetchJson<Manifest>(MANIFEST_URL);
 
-      if (meta && meta.version === manifest.generatedAt && meta.total === manifest.total) {
+      const chunks = await loadChunksFromIdb(db);
+      const storedRows = chunks.reduce((n, c) => n + c.codes.length, 0);
+      // v0.10.0: trust the cache only when the chunk store actually matches
+      // the meta record — protects against datasets written by pre-atomic
+      // builds (partial chunk set + stale meta) and any legacy partial state.
+      const cacheConsistent =
+        meta !== undefined && storedRows === meta.total && chunks.length > 0;
+
+      if (meta && cacheConsistent && meta.version === manifest.generatedAt && meta.total === manifest.total) {
         // Up-to-date cache — load from IndexedDB only (fast, no network).
-        const chunks = await loadChunksFromIdb(db);
-        if (chunks.length > 0 && chunks.reduce((n, c) => n + c.codes.length, 0) > 0) {
+        if (storedRows > 0) {
           loadIntoMemory(chunks);
           status.source = meta.source;
           status.version = meta.version;
@@ -394,8 +435,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function fetchNlmPage(offset: number): Promise<{ total: number; rows: [string, string][] }> {
   const url = `${NLM_API}?terms=*&sf=code,name&max=${NLM_PAGE}&offset=${offset}`;
   for (let attempt = 1; attempt <= 3; attempt++) {
+    // v0.10.0: bounded per-request timeout — a hung connection must never
+    // stall the refresh for the browser's default (~300s); retry instead.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), NLM_PAGE_TIMEOUT_MS);
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as [number, string[], null, [string, string][]];
       if (!Array.isArray(data) || data.length < 4) throw new Error("bad payload");
@@ -403,6 +448,8 @@ async function fetchNlmPage(offset: number): Promise<{ total: number; rows: [str
     } catch (err) {
       if (attempt === 3) throw err;
       await sleep(500 * attempt);
+    } finally {
+      clearTimeout(timer);
     }
   }
   throw new Error("unreachable");
@@ -412,8 +459,28 @@ async function fetchNlmPage(offset: number): Promise<{ total: number; rows: [str
  * Pull the complete dataset from NLM directly into IndexedDB (~150 pages,
  * ~40s with throttling). Replaces the bundled seed until the next bundled
  * release catches up. Progress is reported through the status subscription.
+ *
+ * v0.10.0 hardening:
+ *  - single-flight guard (concurrent invocations share one refresh)
+ *  - per-page request timeout + existing retries
+ *  - plausible-size bounds on BOTH the upstream-reported total and the
+ *    normalized distinct-entry count — a degraded/filtered dump aborts
+ *    BEFORE any write, keeping the previous dataset fully intact
+ *  - pagination completeness: every reported page must arrive (no silent
+ *    early-stop on a transient empty page)
+ *  - atomic dataset swap (chunks + meta in one IndexedDB transaction)
  */
-export async function refreshFromNlmLive(): Promise<void> {
+let refreshPromise: Promise<void> | null = null;
+
+export function refreshFromNlmLive(): Promise<void> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = doRefreshFromNlmLive().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
+async function doRefreshFromNlmLive(): Promise<void> {
   if (typeof window === "undefined" || typeof indexedDB === "undefined") {
     throw new Error("requires a browser environment");
   }
@@ -428,13 +495,32 @@ export async function refreshFromNlmLive(): Promise<void> {
     let total = Infinity;
     let offset = 0;
 
+    // Total is reported by the FIRST page; sanity-check it before pulling 150
+    // more pages into a doomed refresh.
+    const first = await fetchNlmPage(0);
+    total = first.total;
+    if (total < MIN_EXPECTED_CODES || total > MAX_EXPECTED_CODES) {
+      throw new Error(
+        `NLM reported an implausible dataset size (${total}); expected ${MIN_EXPECTED_CODES}-${MAX_EXPECTED_CODES}. Keeping the current dataset.`
+      );
+    }
+    all.push(...first.rows);
+    offset += first.rows.length;
+    status.refreshProgress = Math.min(0.99, offset / total);
+    emit();
+    await sleep(NLM_DELAY_MS);
+
     while (offset < total) {
-      const { total: reported, rows } = await fetchNlmPage(offset);
-      total = reported;
-      if (rows.length === 0) break;
+      const { rows } = await fetchNlmPage(offset);
+      if (rows.length === 0) {
+        // Upstream ended early — a truncated pull must not be swapped in.
+        throw new Error(
+          `NLM pagination ended early at ${offset}/${total} codes. Keeping the current dataset.`
+        );
+      }
       all.push(...rows);
       offset += rows.length;
-      status.refreshProgress = total > 0 ? Math.min(0.99, offset / total) : null;
+      status.refreshProgress = Math.min(0.99, offset / total);
       emit();
       await sleep(NLM_DELAY_MS);
     }
@@ -453,17 +539,22 @@ export async function refreshFromNlmLive(): Promise<void> {
     }
     entries.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
 
+    // Final plausibility gate on what would actually be swapped in.
+    if (entries.length < MIN_EXPECTED_CODES || entries.length > MAX_EXPECTED_CODES) {
+      throw new Error(
+        `refresh produced an implausible dataset (${entries.length} distinct codes); expected ${MIN_EXPECTED_CODES}-${MAX_EXPECTED_CODES}. Keeping the current dataset.`
+      );
+    }
+
     // Store as our own chunks in IndexedDB (5000 codes each). NLM serves the
     // full code list without billable flags — treat every entry as billable
     // (the NLM dump mirrors the reportable codes file).
-    await idbClear(db, STORE_CHUNKS);
     const CHUNK = 5000;
     const chunks: ChunkShape[] = [];
     for (let i = 0; i < entries.length; i += CHUNK) {
       const slice = entries.slice(i, i + CHUNK);
       chunks.push({ from: slice[0][0], to: slice[slice.length - 1][0], codes: slice.map(([c, d]) => [c, d, 1]) });
     }
-    await Promise.all(chunks.map((c, i) => idbSet(db, STORE_CHUNKS, `live-${String(i).padStart(2, "0")}`, c)));
 
     const meta: StoredMeta = {
       version: `live-${new Date().toISOString()}`,
@@ -472,7 +563,12 @@ export async function refreshFromNlmLive(): Promise<void> {
       total: entries.length,
       billable: entries.length,
     };
-    await idbSet(db, STORE_META, "meta", meta);
+    // Atomic swap: chunks + meta commit together or not at all.
+    await idbSwapDataset(
+      db,
+      chunks.map((chunk, i) => ({ key: `live-${String(i).padStart(2, "0")}`, chunk })),
+      meta
+    );
 
     loadIntoMemory(chunks);
     status.source = "nlm-live";
