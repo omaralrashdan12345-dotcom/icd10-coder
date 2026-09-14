@@ -714,6 +714,7 @@ export default function Home() {
       <footer className="mt-auto border-t border-slate-200/70 bg-white/60 py-3 pb-safe dark:border-slate-800/70 dark:bg-slate-950/60 print:hidden sm:pb-3">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <p className="text-center text-xs text-muted-foreground">{t("footer")}</p>
+          <p className="mt-1 text-center text-[11px] leading-snug text-muted-foreground/80">{t("snomed_attribution")}</p>
         </div>
       </footer>
     </div>
