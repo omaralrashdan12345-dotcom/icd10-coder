@@ -18,6 +18,13 @@ import type { Candidate, CodedTerm, CodingResult, SubsetFile } from './types';
 
 import { search, subset } from './matcher';
 
+import { installZaiConfigFromEnv } from '@/lib/zai';
+
+// Z.ai credentials are materialized from env vars at cold boot (see @/lib/zai)
+// so the Stage 1 / Stage 3 LLM calls work on serverless runtimes (Vercel /
+// Netlify) where no `.z-ai-config` file can be shipped.
+installZaiConfigFromEnv();
+
 const MODEL = 'glm-4.6';
 
 interface ExtractedTerm {

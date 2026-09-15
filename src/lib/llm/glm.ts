@@ -4,57 +4,12 @@ import path from "node:path";
 import type { ClinicalCodingResponse } from "@/lib/schemas/icd";
 import type { LLMProvider } from "./types";
 import { SYSTEM_PROMPT, buildUserMessage } from "./shared-prompt";
+import { installZaiConfigFromEnv } from "@/lib/zai";
 
-/**
- * Ensure the ZAI SDK can find its config on cloud deployments (Vercel /
- * Netlify) where you can't ship a `.z-ai-config` file. We write a config
- * file at module load time if the env vars are set and no config file
- * exists yet.
- */
-function ensureZaiConfig(): void {
-  // On serverless platforms (Vercel/Netlify) the filesystem is read-only and
-  // there is no `.z-ai-config` — Z.ai config must come from env vars only.
-  if (process.env.VERCEL || process.env.NETLIFY) return;
-
-  const candidates = [
-    path.join(process.cwd(), ".z-ai-config"),
-    path.join(process.env.HOME ?? "/tmp", ".z-ai-config"),
-    "/etc/.z-ai-config",
-  ];
-  const exists = candidates.some((p) => {
-    try {
-      return fs.existsSync(/* turbopackIgnore: true */ p);
-    } catch {
-      return false;
-    }
-  });
-
-  if (exists) return;
-
-  // Try to construct from env vars
-  const baseUrl = process.env.ZAI_BASE_URL;
-  const apiKey = process.env.ZAI_API_KEY;
-  const token = process.env.ZAI_TOKEN;
-  if (!baseUrl || !apiKey) return; // nothing we can do
-
-  const config: Record<string, string> = { baseUrl, apiKey };
-  if (token) config.token = token;
-  if (process.env.ZAI_CHAT_ID) config.chatId = process.env.ZAI_CHAT_ID;
-  if (process.env.ZAI_USER_ID) config.userId = process.env.ZAI_USER_ID;
-
-  try {
-    fs.writeFileSync(/* turbopackIgnore: true */ candidates[0], JSON.stringify(config, null, 2), { mode: 0o600 });
-  } catch {
-    // If we can't write to project root (read-only FS), try /tmp
-    try {
-      fs.writeFileSync(/* turbopackIgnore: true */ "/tmp/.z-ai-config", JSON.stringify(config, null, 2), { mode: 0o600 });
-    } catch {
-      // give up silently — the SDK will throw a clearer error later
-    }
-  }
-}
-
-ensureZaiConfig();
+// Z.ai credentials are materialized from env vars at cold boot by the shared
+// installer (see @/lib/zai), so this provider works on serverless runtimes
+// (Vercel/Netlify) where no `.z-ai-config` file can be shipped.
+installZaiConfigFromEnv();
 
 /**
  * Returns true if a *real* Z.ai credential is available (env var or .z-ai-config file).
