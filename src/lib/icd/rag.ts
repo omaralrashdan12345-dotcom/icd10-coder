@@ -19,6 +19,13 @@ export interface RAGResult {
   category?: string;
 }
 
+/** Words too generic to be useful as a single-token search term. */
+const TERM_STOPWORDS = new Set([
+  "the", "and", "for", "with", "without", "patient", "history", "male", "female",
+  "year", "years", "old", "presents", "presented", "denies", "complains", "note",
+  "today", "diagnosis", "acute", "chronic", "left", "right", "bilateral",
+]);
+
 export interface RAGSearchOutcome {
   results: RAGResult[];
   nlm_ok: boolean;
@@ -111,9 +118,18 @@ export function extractSearchTerms(text: string): string[] {
     .replace(/\s+/g, " ")
     .split(/[,.;:()\n]/)
     .map((s) => s.trim())
-    .filter((s) => s.split(/\s+/).length >= 2 && s.length >= 4 && s.length <= 60);
+    .filter((s) => {
+      if (s.length < 3 || s.length > 60) return false;
+      const words = s.split(/\s+/).filter(Boolean);
+      // Multi-word phrases are always eligible. A single word is eligible only
+      // when it is not a stopword — otherwise medication/condition lookups like
+      // "metformin" or "atorvastatin" were silently dropped and returned zero
+      // results from /api/icd-search.
+      if (words.length >= 2) return true;
+      return words.length === 1 && !TERM_STOPWORDS.has(words[0].toLowerCase());
+    });
 
-  return [
+  const extracted = [
     ...new Set([
       ...codes,
       ...conditionTerms,
@@ -122,4 +138,11 @@ export function extractSearchTerms(text: string): string[] {
       ...phrases,
     ]),
   ];
+  // Never return nothing for a non-empty query — fall back to the raw trimmed
+  // text so a single unfamiliar token still reaches the matcher.
+  if (extracted.length === 0) {
+    const q = text.trim();
+    if (q) extracted.push(q);
+  }
+  return extracted;
 }

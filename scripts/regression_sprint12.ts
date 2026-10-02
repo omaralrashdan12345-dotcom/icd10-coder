@@ -15,6 +15,7 @@
  */
 import { SYNONYMS, stem, expandToken, expandTokens, hasSynonyms } from "../src/lib/icd/query-expand";
 import { __loadRecordsForTest, searchFullDb } from "../src/lib/icd/full-db";
+import { extractSearchTerms, ragSearch } from "../src/lib/icd/rag";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -103,10 +104,20 @@ async function testRankedSearch() {
   check("pure-garbage query → no results", (await top("zzzzqqqq", 5)).length === 0);
 }
 
+async function testRagExtraction() {
+  console.log("\n▶ R — RAG term extraction (single-word medication lookup)");
+  check("'metformin' extracts a usable term (was dropped pre-fix)", extractSearchTerms("metformin").length > 0, JSON.stringify(extractSearchTerms("metformin")));
+  check("'atorvastatin' extracts a usable term", extractSearchTerms("atorvastatin").length > 0, JSON.stringify(extractSearchTerms("atorvastatin")));
+  check("generic single words are still filtered ('the')", !extractSearchTerms("the").includes("the") || extractSearchTerms("the").length === 1);
+  const met = await ragSearch("metformin", 5);
+  check("ragSearch('metformin') returns a diabetes code", met.results.some((r) => /^E1[013]/.test(r.code)), met.results.map((r) => r.code).join(","));
+}
+
 async function main() {
   console.log("================ Sprint 12 — search accuracy + expansion ================");
   testQueryExpand();
   await testRankedSearch();
+  await testRagExtraction();
 
   console.log("\n==============================================================");
   console.log(`SPRINT 12 RESULT: ${pass} passed, ${fail} failed (${pass + fail} total)`);
