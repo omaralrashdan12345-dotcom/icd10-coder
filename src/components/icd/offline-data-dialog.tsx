@@ -58,7 +58,7 @@ export function OfflineDataDialog({ locale }: { locale: Locale }) {
   }
 
   const ready = dbStatus?.state === "ready";
-  const isAr = locale === "ar";
+  const isAr = false;
 
   function fmtVersion(v: string | null): string {
     if (!v) return "—";

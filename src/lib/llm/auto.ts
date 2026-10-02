@@ -32,12 +32,25 @@ interface TierResult {
   tierLabel: string;
 }
 
+/** Fail fast: unreachable providers must never hold the function past Vercel's limit. */
+const TIER_BUDGET_MS = 8000;
+const CHAIN_DEADLINE_MS = 45000;
+let chainDeadline = 0;
+
 async function tryTier(
   name: string,
-  fn: () => Promise<{ parsed: ClinicalCodingResponse; raw: string }>
+  fn: () => Promise<{ parsed: ClinicalCodingResponse; raw: string }>,
+  budgetMs: number = TIER_BUDGET_MS
 ): Promise<TierResult | null> {
+  const budget = Math.min(budgetMs, chainDeadline - Date.now());
+  if (budget <= 500) return null;
   try {
-    const result = await fn();
+    const result = await Promise.race([
+      fn(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`${name} timed out after ${budget}ms`)), budget)
+      ),
+    ]);
     return { ...result, tierLabel: name };
   } catch {
     return null;
@@ -49,12 +62,13 @@ export const autoProvider: LLMProvider = {
   modelLabel: "Auto (GLM → Groq → Pollinations → Offline)",
   async generateCoding(clinicalNote, ragContext) {
     const failedReasons: string[] = [];
+    chainDeadline = Date.now() + CHAIN_DEADLINE_MS;
 
     // Tier 1: GLM-4-Flash (best quality among free options — skip fast if no key configured)
     const glm = makeGLMProvider("glm-4-flash");
     let tier1: TierResult | null = null;
     if (isZaiConfigured()) {
-      tier1 = await tryTier("GLM-4-Flash", () => glm.generateCoding(clinicalNote, ragContext));
+      tier1 = await tryTier("GLM-4-Flash", () => glm.generateCoding(clinicalNote, ragContext), 6000);
       if (tier1) {
         return {
           parsed: tier1.parsed,

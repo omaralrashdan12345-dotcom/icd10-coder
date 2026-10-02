@@ -579,6 +579,22 @@ const MOCK_RULES: MockRule[] = [
   // GI / ABDOMEN
   // =========================================================================
   {
+    keywords: ["epigastric pain", "epigastric", "epigastric colicky pain"],
+    code: "R10.13",
+    description: "Epigastric pain",
+    level: "primary",
+    rationale: "Epigastric pain documented - R10.13 (site-specific abdominal pain takes precedence over R10.9).",
+    confidence: 0.87,
+  },
+  {
+    keywords: ["colicky pain", "colicky", "crampy abdominal pain"],
+    code: "R10.84",
+    description: "Other and unspecified abdominal pain",
+    level: "primary",
+    rationale: "Colicky abdominal pain without documented site - R10.84; site-specific code takes precedence if documented.",
+    confidence: 0.82,
+  },
+  {
     keywords: ["abdominal pain", "stomach pain", "belly pain"],
     code: "R10.9",
     description: "Unspecified abdominal pain",
@@ -769,6 +785,14 @@ const MOCK_RULES: MockRule[] = [
     level: "primary",
     rationale: "Cerebral infarction — I63.9.",
     confidence: 0.85,
+  },
+  {
+    keywords: ["slurred speech", "sudden onset weakness", "sudden weakness", "facial droop", "face droop", "one sided weakness", "one-sided weakness"],
+    code: "I63.9",
+    description: "Cerebral infarction, unspecified",
+    level: "primary",
+    rationale: "Acute stroke presentation (sudden focal deficit / slurred speech / facial droop) — I63.9; refine to the documented vascular territory when available.",
+    confidence: 0.83,
   },
   {
     keywords: ["tia", "transient ischemic attack", "mini stroke"],

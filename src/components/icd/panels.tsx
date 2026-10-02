@@ -66,11 +66,11 @@ function ValidationIssueRow({ issue, locale }: { issue: ValidationIssue; locale:
             {issue.code && <code className="font-mono text-xs text-muted-foreground">→ {issue.code}</code>}
           </div>
           <p className="mt-1 text-sm text-foreground leading-relaxed">
-            {locale === "ar" ? issue.message_ar : issue.message_en}
+            {issue.message_en}
           </p>
           {(issue.suggestion_en || issue.suggestion_ar) && (
             <p className="mt-1 text-xs text-muted-foreground italic">
-              {locale === "ar" ? issue.suggestion_ar : issue.suggestion_en}
+              {issue.suggestion_en}
             </p>
           )}
         </div>

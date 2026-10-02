@@ -1,14 +1,17 @@
 {
  "meta": {
-  "builtAt": "2026-09-14T18:51:22.085Z",
-  "what": "Embedded SNOMED CT subset for offline demo coding (curated seed, server-validated)",
+  "builtAt": "2026-09-17T02:17:05.408Z",
+  "what": "Embedded SNOMED CT subset for offline coding (curated seed + v2 high-yield expansion pack, server-validated)",
   "snomedEdition": "SNOMED CT International Edition — validated via EBI OLS4 (mirror of the international release); search fallback via CSIRO Ontoserver (AU edition, superset of international)",
   "icdTarget": "ICD-10-CM — code targets curated, then validated against NLM Clinical Table Search Service (icd10cm v3)",
   "mapRefsetProduction": "For production regenerate from the official \"SNOMED CT to ICD-10-CM extended map\" refset (60206000) using a local Snowstorm instance (see integration guide).",
   "license": "SNOMED CT is licensed material — deployment requires an appropriate license (e.g., SNOMED International affiliate/member, or US NLM UMLS license).",
-  "conceptCount": 273,
+  "conceptCount": 597,
   "droppedCount": 0,
-  "withIcdMap": 226
+  "withIcdMap": 493,
+  "mergedFrom": "v2-workspace-export (icd10-coder-full-source.zip)",
+  "mergedOn": "2026-10-02",
+  "note": "| v1 authoritative on ID collisions; v2 additions shape-validated + OLS4 spot-checked | FY2027 bundle reconciliation: off-domain concepts and header-target maps stripped; target names normalized to CDC short titles"
  },
  "concepts": [
   {
@@ -76,7 +79,7 @@
    "icd10cm": [
     {
      "code": "G20.A1",
-     "name": "Parkinson's disease without dyskinesia, without mention of fluctuations"
+     "name": "Parkinson's dis w/o dyskinesia, w/o mention of fluctuations"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -154,7 +157,7 @@
    "icd10cm": [
     {
      "code": "C50.919",
-     "name": "Malignant neoplasm of unspecified site of unspecified female breast"
+     "name": "Malignant neoplasm of unsp site of unspecified female breast"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -171,7 +174,7 @@
    "icd10cm": [
     {
      "code": "K80.20",
-     "name": "Calculus of gallbladder without cholecystitis without obstruction"
+     "name": "Calculus of gallbladder w/o cholecystitis w/o obstruction"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -546,7 +549,7 @@
    "icd10cm": [
     {
      "code": "C34.90",
-     "name": "Malignant neoplasm of unspecified part of unspecified bronchus or lung"
+     "name": "Malignant neoplasm of unsp part of unsp bronchus or lung"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -567,7 +570,7 @@
    "icd10cm": [
     {
      "code": "K25.9",
-     "name": "Gastric ulcer, unspecified as acute or chronic, without hemorrhage or perforation"
+     "name": "Gastric ulcer, unsp as acute or chronic, w/o hemor or perf"
     }
    ],
    "resolvedBy": "curated-id"
@@ -912,7 +915,7 @@
    "icd10cm": [
     {
      "code": "K57.32",
-     "name": "Diverticulitis of large intestine without perforation or abscess without bleeding"
+     "name": "Dvtrcli of lg int w/o perforation or abscess w/o bleeding"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -1004,7 +1007,7 @@
    "icd10cm": [
     {
      "code": "E11.40",
-     "name": "Type 2 diabetes mellitus with diabetic neuropathy, unspecified"
+     "name": "Type 2 diabetes mellitus with diabetic neuropathy, unsp"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -1101,7 +1104,7 @@
    "icd10cm": [
     {
      "code": "K85.90",
-     "name": "Acute pancreatitis without necrosis or infection, unspecified"
+     "name": "Acute pancreatitis without necrosis or infection, unsp"
     }
    ],
    "resolvedBy": "search-fallback"
@@ -1699,7 +1702,7 @@
    "icd10cm": [
     {
      "code": "N40.1",
-     "name": "Benign prostatic hyperplasia with lower urinary tract symptoms"
+     "name": "Benign prostatic hyperplasia with lower urinary tract symp"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -2213,7 +2216,7 @@
    "icd10cm": [
     {
      "code": "E05.90",
-     "name": "Thyrotoxicosis, unspecified without thyrotoxic crisis or storm"
+     "name": "Thyrotoxicosis, unsp without thyrotoxic crisis or storm"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -2393,7 +2396,7 @@
    "icd10cm": [
     {
      "code": "G43.909",
-     "name": "Migraine, unspecified, not intractable, without status migrainosus"
+     "name": "Migraine, unsp, not intractable, without status migrainosus"
     }
    ],
    "resolvedBy": "curated-id"
@@ -2578,7 +2581,7 @@
    "icd10cm": [
     {
      "code": "K40.90",
-     "name": "Unilateral inguinal hernia, without obstruction or gangrene, not specified as recurrent"
+     "name": "Unil inguinal hernia, w/o obst or gangr, not spcf as recur"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -2795,7 +2798,7 @@
    "icd10cm": [
     {
      "code": "J96.90",
-     "name": "Respiratory failure, unspecified, unspecified whether with hypoxia or hypercapnia"
+     "name": "Respiratory failure, unsp, unsp w hypoxia or hypercapnia"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -2846,7 +2849,7 @@
    "icd10cm": [
     {
      "code": "I25.10",
-     "name": "Atherosclerotic heart disease of native coronary artery without angina pectoris"
+     "name": "Athscl heart disease of native coronary artery w/o ang pctrs"
     }
    ],
    "resolvedBy": "curated-id"
@@ -3245,7 +3248,7 @@
    "icd10cm": [
     {
      "code": "F03.90",
-     "name": "Unspecified dementia, unspecified severity, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety"
+     "name": "Unsp dementia, unsp severity, without beh/psych/mood/anx"
     }
    ],
    "resolvedBy": "curated-id"
@@ -3323,7 +3326,7 @@
    "icd10cm": [
     {
      "code": "I25.10",
-     "name": "Atherosclerotic heart disease of native coronary artery without angina pectoris"
+     "name": "Athscl heart disease of native coronary artery w/o ang pctrs"
     }
    ],
    "resolvedBy": "curated-id"
@@ -3588,7 +3591,7 @@
    "icd10cm": [
     {
      "code": "J11.1",
-     "name": "Influenza due to unidentified influenza virus with other respiratory manifestations"
+     "name": "Flu due to unidentified influenza virus w oth resp manifest"
     }
    ],
    "resolvedBy": "curated-id"
@@ -4077,7 +4080,7 @@
    "icd10cm": [
     {
      "code": "Z34.90",
-     "name": "Encounter for supervision of normal pregnancy, unspecified, unspecified trimester"
+     "name": "Encntr for suprvsn of normal pregnancy, unsp, unsp trimester"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -4515,7 +4518,7 @@
    "icd10cm": [
     {
      "code": "G40.909",
-     "name": "Epilepsy, unspecified, not intractable, without status epilepticus"
+     "name": "Epilepsy, unsp, not intractable, without status epilepticus"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -4711,7 +4714,7 @@
    "icd10cm": [
     {
      "code": "C95.00",
-     "name": "Acute leukemia of unspecified cell type not having achieved remission"
+     "name": "Acute leukemia of unsp cell type not achieve remission"
     }
    ],
    "resolvedBy": "ols4-search"
@@ -4783,6 +4786,5310 @@
    "role": "supplemental",
    "icd10cm": [],
    "resolvedBy": "curated-id"
+  },
+  {
+   "id": "432504007",
+   "pt": "Cerebral infarction",
+   "fsn": "Cerebral infarction",
+   "synonyms": [
+    "stroke",
+    "cvd",
+    "brain infarct"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "74474003",
+   "pt": "Gastrointestinal hemorrhage (disorder)",
+   "fsn": "Gastrointestinal hemorrhage (disorder)",
+   "synonyms": [
+    "gi bleed",
+    "gi bleeding"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "76581006",
+   "pt": "Cholecystitis",
+   "fsn": "Cholecystitis",
+   "synonyms": [
+    "gallbladder infection"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "405737000",
+   "pt": "Pharyngitis",
+   "fsn": "Pharyngitis",
+   "synonyms": [
+    "sore throat"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "91175000",
+   "pt": "Seizure",
+   "fsn": "Seizure",
+   "synonyms": [
+    "convulsion",
+    "fit"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "43339004",
+   "pt": "Hypokalemia (disorder)",
+   "fsn": "Hypokalemia (disorder)",
+   "synonyms": [
+    "low potassium"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "44465007",
+   "pt": "Sprain of ankle",
+   "fsn": "Sprain of ankle",
+   "synonyms": [
+    "sprained ankle"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "79922009",
+   "pt": "Epigastric pain",
+   "fsn": "Epigastric pain",
+   "synonyms": [
+    "epigastric discomfort",
+    "upper abdominal pain"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "73063007",
+   "pt": "Colicky pain",
+   "fsn": "Colicky pain",
+   "synonyms": [
+    "colicky abdominal pain",
+    "crampy abdominal pain"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "8011004",
+   "pt": "Dysarthria",
+   "fsn": "Dysarthria",
+   "synonyms": [
+    "slurred speech"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "20022000",
+   "pt": "Hemiparesis",
+   "fsn": "Hemiparesis",
+   "synonyms": [
+    "one sided weakness",
+    "right sided weakness"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "curated-pack-v2 (snowstorm/ols4, no icd map proven)"
+  },
+  {
+   "id": "1010233001",
+   "pt": "Otalgia of left ear",
+   "fsn": "Otalgia of left ear",
+   "synonyms": [
+    "Earache of left ear",
+    "ear pain"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "H92.09",
+     "name": "Otalgia, unspecified ear"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1010297003",
+   "pt": "Neonatal vitamin B12 deficiency due to maternal vitamin B12 deficiency",
+   "fsn": "Neonatal vitamin B12 deficiency due to maternal vitamin B12 deficiency",
+   "synonyms": [
+    "Neonatal vitamin B12 deficiency due to vitamin B12 deficiency in mother",
+    "cobalamin deficiency"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E53.8",
+     "name": "Deficiency of other specified B group vitamins"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1010562001",
+   "pt": "Scabicide therapeutic role",
+   "fsn": "Scabicide therapeutic role",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B86",
+     "name": "Scabies"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "102557007",
+   "pt": "Arm claudication",
+   "fsn": "Arm claudication",
+   "synonyms": [
+    "Lame arm"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "102614006",
+   "pt": "Generalized abdominal pain",
+   "fsn": "Generalized abdominal pain (finding)",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.84",
+     "name": "Generalized abdominal pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "10489002",
+   "pt": "Nasal endoscopy with nasal polypectomy",
+   "fsn": "Nasal endoscopy with nasal polypectomy",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J33.9",
+     "name": "Nasal polyp, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "107456006",
+   "pt": "Family Kyphosidae - sea chub",
+   "fsn": "Family Kyphosidae - sea chub",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M40.00",
+     "name": "Postural kyphosis, site unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "10750411000119102",
+   "pt": "Nonpurulent mastitis associated with lactation",
+   "fsn": "Nonpurulent mastitis associated with lactation",
+   "synonyms": [
+    "Nonpurulent mastitis during lactation"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N61.23",
+     "name": "Granulomatous mastitis, bilateral breast"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "10847001",
+   "pt": "Bronchoscopy",
+   "fsn": "Bronchoscopy",
+   "synonyms": [
+    "Bronchial endoscopy",
+    "By - Bronchoscopy",
+    "Endoscopy of bronchus",
+    "Tracheobronchial endoscopy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "109989006",
+   "pt": "Multiple myeloma",
+   "fsn": "Multiple myeloma",
+   "synonyms": [
+    "Kahler's disease",
+    "Multiple myeloma (clinical)",
+    "Myeloma",
+    "Myelomatosis",
+    "Plasma cell myeloma",
+    "Plasmacytic myeloma"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C90.00",
+     "name": "Multiple myeloma not having achieved remission"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "109992005",
+   "pt": "Polycythemia vera",
+   "fsn": "Polycythemia vera (disorder)",
+   "synonyms": [
+    "Osler-Vaquez syndrome",
+    "Vaquez's disease"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D75.1",
+     "name": "Secondary polycythemia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "110473004",
+   "pt": "Cataract surgery",
+   "fsn": "Cataract surgery",
+   "synonyms": [
+    "phacoemulsification"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "111265002",
+   "pt": "Lordosis deformity of spine following surgical procedure",
+   "fsn": "Lordosis deformity of spine following surgical procedure",
+   "synonyms": [
+    "Post-surgical lordosis deformity of spine"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M40.50",
+     "name": "Lordosis, unspecified, site unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1119299008",
+   "pt": "Mitral regurgitation due to congenital abnormality of mitral subvalvular apparatus",
+   "fsn": "Mitral regurgitation due to congenital abnormality of mitral subvalvular apparatus",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I34.0",
+     "name": "Nonrheumatic mitral (valve) insufficiency"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "113091000",
+   "pt": "Magnetic resonance imaging",
+   "fsn": "Magnetic resonance imaging",
+   "synonyms": [
+    "MR - Magnetic resonance",
+    "MRI - Magnetic resonance imaging",
+    "MRI",
+    "Magnetic resonance study",
+    "NMR - Nuclear magnetic resonance"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1140008",
+   "pt": "Thermal hypesthesia",
+   "fsn": "Thermal hypesthesia (finding)",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R20.3",
+     "name": "Hyperesthesia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1142130009",
+   "pt": "Abdominal paracentesis needle",
+   "fsn": "Abdominal paracentesis needle",
+   "synonyms": [],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1149155004",
+   "pt": "Reduced level of agitation",
+   "fsn": "Reduced level of agitation",
+   "synonyms": [
+    "Level of agitation reduced"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R45.1",
+     "name": "Restlessness and agitation"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1153575004",
+   "pt": "Persistent depressive disorder",
+   "fsn": "Persistent depressive disorder",
+   "synonyms": [
+    "dysthymia"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F34.1",
+     "name": "Dysthymic disorder"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1163002007",
+   "pt": "Electrocardiography service",
+   "fsn": "Electrocardiography service",
+   "synonyms": [
+    "ECG (electrocardiography) service",
+    "ECG",
+    "EKG"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1163005009",
+   "pt": "Hodgkin lymphoma",
+   "fsn": "Hodgkin lymphoma",
+   "synonyms": [
+    "Hodgkin's disease",
+    "Hodgkin's lymphoma"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C81.90",
+     "name": "Hodgkin lymphoma, unspecified, unspecified site"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "117501000119109",
+   "pt": "Urinary hesitancy due to benign prostatic hypertrophy",
+   "fsn": "Urinary hesitancy due to benign prostatic hypertrophy",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R39.11",
+     "name": "Hesitancy of micturition"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1179627006",
+   "pt": "Neonatal respiratory distress",
+   "fsn": "Neonatal respiratory distress",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "P22.0",
+     "name": "Respiratory distress syndrome of newborn"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1208898008",
+   "pt": "Occupational Raynaud phenomenon",
+   "fsn": "Occupational Raynaud phenomenon",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I73.00",
+     "name": "Raynaud's syndrome without gangrene"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "121995001",
+   "pt": "Measurement of Ebolavirus antibody",
+   "fsn": "Measurement of Ebolavirus antibody",
+   "synonyms": [
+    "Ebola virus antibody assay"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A98.4",
+     "name": "Ebola virus disease"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "122480009",
+   "pt": "Hallux valgus",
+   "fsn": "Hallux valgus",
+   "synonyms": [
+    "HAV - Hallux abductovalgus",
+    "HV - Hallux valgus",
+    "Hallux abductovalgus",
+    "bunion"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M20.10",
+     "name": "Hallux valgus (acquired), unspecified foot"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1230046007",
+   "pt": "Cervical cancer screening service",
+   "fsn": "Cervical cancer screening service",
+   "synonyms": [
+    "malignant neoplasm of cervix"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C53.9",
+     "name": "Malignant neoplasm of cervix uteri, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1258985005",
+   "pt": "Invasive mechanical ventilation",
+   "fsn": "Invasive mechanical ventilation",
+   "synonyms": [
+    "IMV - invasive mechanical ventilation",
+    "ventilator support"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1259109009",
+   "pt": "Cerebrospinal fluid rhinorrhea due to hydrocephalus",
+   "fsn": "Cerebrospinal fluid rhinorrhea due to hydrocephalus (disorder)",
+   "synonyms": [
+    "runny nose"
+   ],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R09.81",
+     "name": "Nasal congestion"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1259216002",
+   "pt": "Pressure Ulcer Scale for Healing",
+   "fsn": "Pressure Ulcer Scale for Healing",
+   "synonyms": [
+    "PUSH - Pressure Ulcer Scale for Healing",
+    "bedsore",
+    "decubitus ulcer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L89.153",
+     "name": "Pressure ulcer of sacral region, stage 3"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1263650006",
+   "pt": "Congenital trigger finger",
+   "fsn": "Congenital trigger finger",
+   "synonyms": [
+    "stenosing tenosynovitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M65.30",
+     "name": "Trigger finger, unspecified finger"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "126660000",
+   "pt": "Deviated nasal septum",
+   "fsn": "Deviated nasal septum",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J34.2",
+     "name": "Deviated nasal septum"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "127034005",
+   "pt": "Pancytopenia",
+   "fsn": "Pancytopenia",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D61.818",
+     "name": "Other pancytopenia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "128188000",
+   "pt": "Cerebral palsy",
+   "fsn": "Cerebral palsy",
+   "synonyms": [
+    "CP - cerebral palsy",
+    "Congenital cerebral palsy",
+    "Infantile cerebral palsy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G80.9",
+     "name": "Cerebral palsy, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1287742003",
+   "pt": "Radiotherapy",
+   "fsn": "Radiotherapy",
+   "synonyms": [
+    "RT - Radiotherapy",
+    "Radiation therapy",
+    "radiation therapy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "128841001",
+   "pt": "Polycythemia vera",
+   "fsn": "Polycythemia vera (morphologic abnormality)",
+   "synonyms": [],
+   "tag": "morphologic abnormality",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D45",
+     "name": "Polycythemia vera"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "129611009",
+   "pt": "Ischemic peripheral neuropathy",
+   "fsn": "Ischemic peripheral neuropathy (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G62.9",
+     "name": "Polyneuropathy, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "12962009",
+   "pt": "Histoplasmosis",
+   "fsn": "Histoplasmosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B39.9",
+     "name": "Histoplasmosis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1297075002",
+   "pt": "Organic primary polydipsia",
+   "fsn": "Organic primary polydipsia",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R63.1",
+     "name": "Polydipsia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1338007",
+   "pt": "Basal cell carcinoma",
+   "fsn": "Basal cell carcinoma",
+   "synonyms": [
+    "BCC - Basal cell carcinoma",
+    "Basal cell epithelioma",
+    "Basiloma",
+    "Rodent ulcer",
+    "BCC"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C44.91",
+     "name": "Basal cell carcinoma of skin, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "134328007",
+   "pt": "Lipoma",
+   "fsn": "Lipoma",
+   "synonyms": [
+    "Lipoma morphology"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D17.9",
+     "name": "Benign lipomatous neoplasm, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "13600006",
+   "pt": "Folliculitis",
+   "fsn": "Folliculitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L73.9",
+     "name": "Follicular disorder, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1371420000",
+   "pt": "Auditory hallucinations with visual hallucinations",
+   "fsn": "Auditory hallucinations with visual hallucinations",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R44.3",
+     "name": "Hallucinations, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "13920009",
+   "pt": "Hepatic encephalopathy",
+   "fsn": "Hepatic encephalopathy",
+   "synonyms": [
+    "HE - Hepatic encephalopathy",
+    "Hepatocerebral encephalopathy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K72.90",
+     "name": "Hepatic failure, unspecified without coma"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "139394000",
+   "pt": "Nocturia",
+   "fsn": "Nocturia",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R35.1",
+     "name": "Nocturia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "141000119100",
+   "pt": "Daytime somnolence",
+   "fsn": "Daytime somnolence",
+   "synonyms": [
+    "lethargy",
+    "drowsiness"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R40.0",
+     "name": "Somnolence"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "14168008",
+   "pt": "Rabies",
+   "fsn": "Rabies",
+   "synonyms": [
+    "Hydrophobia",
+    "Lyssa"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A82.9",
+     "name": "Rabies, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "14302001",
+   "pt": "Amenorrhea",
+   "fsn": "Amenorrhea (finding)",
+   "synonyms": [
+    "Absence of menstruation"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "N91.2",
+     "name": "Amenorrhea, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1441000119105",
+   "pt": "Exposure to streptococcal pharyngitis",
+   "fsn": "Exposure to streptococcal pharyngitis",
+   "synonyms": [
+    "strep throat"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J02.0",
+     "name": "Streptococcal pharyngitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "15033003",
+   "pt": "Peritonsillar abscess",
+   "fsn": "Peritonsillar abscess",
+   "synonyms": [
+    "Quinsy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J36",
+     "name": "Peritonsillar abscess"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "1532007",
+   "pt": "Viral pharyngitis",
+   "fsn": "Viral pharyngitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J02.9",
+     "name": "Acute pharyngitis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "156370009",
+   "pt": "Psoriatic arthritis",
+   "fsn": "Psoriatic arthritis",
+   "synonyms": [
+    "PA (Psoriatic arthritis)",
+    "PsA (Psoriatic arthritis)"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L40.50",
+     "name": "Arthropathic psoriasis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "15938005",
+   "pt": "Eclampsia",
+   "fsn": "Eclampsia",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O15.9",
+     "name": "Eclampsia, unspecified as to time period"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "160303001",
+   "pt": "Family history of diabetes mellitus",
+   "fsn": "Family history of diabetes mellitus",
+   "synonyms": [
+    "FH: Diabetes mellitus",
+    "Family history: Diabetes mellitus"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z83.3",
+     "name": "Family history of diabetes mellitus"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "160357008",
+   "pt": "FH: Hypertension",
+   "fsn": "FH: Hypertension",
+   "synonyms": [
+    "Family history of hypertension",
+    "Family history: Hypertension"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z82.49",
+     "name": "Family hx of ischem heart dis and oth dis of the circ sys"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "16111000119105",
+   "pt": "Incomplete spontaneous abortion due to hemorrhage",
+   "fsn": "Incomplete spontaneous abortion due to hemorrhage (disorder)",
+   "synonyms": [
+    "miscarriage"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O03.9",
+     "name": "Complete or unsp spontaneous abortion without complication"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "161712005",
+   "pt": "Menopause",
+   "fsn": "Menopause",
+   "synonyms": [
+    "Menopausal state",
+    "Menopause, function",
+    "The change",
+    "menopausal state"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z78.0",
+     "name": "Asymptomatic menopausal state"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "16310003",
+   "pt": "Ultrasonography",
+   "fsn": "Ultrasonography",
+   "synonyms": [
+    "Echography",
+    "US - ultrasound",
+    "USS - ultrasound scan",
+    "Ultrasonogram",
+    "Ultrasound procedure",
+    "Ultrasound scan",
+    "Ultrasound",
+    "ultrasound"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "165517008",
+   "pt": "Neutropenia",
+   "fsn": "Neutropenia",
+   "synonyms": [
+    "Neutrophil count below reference range"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "D70.9",
+     "name": "Neutropenia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "165766007",
+   "pt": "Blood transfusion center reference number",
+   "fsn": "Blood transfusion center reference number (situation)",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "166631000119101",
+   "pt": "Nocturnal muscle cramp",
+   "fsn": "Nocturnal muscle cramp",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R25.2",
+     "name": "Cramp and spasm"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "16754691000119107",
+   "pt": "Abnormal uterine bleeding due to submucous uterine fibroid",
+   "fsn": "Abnormal uterine bleeding due to submucous uterine fibroid",
+   "synonyms": [
+    "Submucous uterine fibroid with abnormal uterine bleeding",
+    "leiomyoma of uterus"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D25.9",
+     "name": "Leiomyoma of uterus, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "16833081000119100",
+   "pt": "Dyspepsia during pregnancy",
+   "fsn": "Dyspepsia during pregnancy",
+   "synonyms": [
+    "Dyspepsia in pregnancy",
+    "Indigestion during pregnancy",
+    "indigestion"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "K30",
+     "name": "Functional dyspepsia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "17226007",
+   "pt": "Adjustment disorder",
+   "fsn": "Adjustment disorder",
+   "synonyms": [
+    "Adaptation reaction",
+    "Adjustment reaction"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F43.23",
+     "name": "Adjustment disorder with mixed anxiety and depressed mood"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "173422009",
+   "pt": "Tonsillectomy",
+   "fsn": "Tonsillectomy",
+   "synonyms": [
+    "Excision of tonsil",
+    "Ts - Tonsillectomy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "176058000",
+   "pt": "Ureteroscopic laser fragmentation of ureteric calculus",
+   "fsn": "Ureteroscopic laser fragmentation of ureteric calculus",
+   "synonyms": [
+    "Ureteroscopic laser lithotripsy of ureteric calculus",
+    "ureteric stone"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N20.1",
+     "name": "Calculus of ureter"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "18412003",
+   "pt": "Laparotomy for staging of ovarian cancer",
+   "fsn": "Laparotomy for staging of ovarian cancer",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C56.1",
+     "name": "Malignant neoplasm of right ovary"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "18637002",
+   "pt": "Megaloblastic anemia of premature infant",
+   "fsn": "Megaloblastic anemia of premature infant (disorder)",
+   "synonyms": [
+    "prematurity"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "P07.30",
+     "name": "Preterm newborn, unspecified weeks of gestation"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "186431008",
+   "pt": "Clostridioides difficile infection",
+   "fsn": "Clostridioides difficile infection",
+   "synonyms": [
+    "Clostridium difficile infection",
+    "Infection caused by Clostridioides difficile",
+    "C. difficile",
+    "C. diff colitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A04.72",
+     "name": "Enterocolitis d/t Clostridium difficile, not spcf as recur"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "191480000",
+   "pt": "Alcohol withdrawal",
+   "fsn": "Alcohol withdrawal",
+   "synonyms": [
+    "Alcohol withdrawal syndrome"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F10.239",
+     "name": "Alcohol dependence with withdrawal, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "195168007",
+   "pt": "Intracerebral hemorrhage with intraventricular hemorrhage",
+   "fsn": "Intracerebral hemorrhage with intraventricular hemorrhage (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I61.9",
+     "name": "Nontraumatic intracerebral hemorrhage, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "195450002",
+   "pt": "Infected varicose ulcer",
+   "fsn": "Infected varicose ulcer",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "19598007",
+   "pt": "Generalized epilepsy",
+   "fsn": "Generalized epilepsy (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G40.419",
+     "name": "Oth generalized epilepsy, intractable, w/o stat epi"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "196075003",
+   "pt": "Pleurisy",
+   "fsn": "Pleurisy",
+   "synonyms": [
+    "Pleuritis",
+    "pleuritis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "R09.1",
+     "name": "Pleurisy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "20010003",
+   "pt": "Borderline personality disorder",
+   "fsn": "Borderline personality disorder",
+   "synonyms": [
+    "BPD - borderline personality disorder"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F60.3",
+     "name": "Borderline personality disorder"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "201101007",
+   "pt": "Actinic keratosis",
+   "fsn": "Actinic keratosis",
+   "synonyms": [
+    "AK - Actinic keratosis",
+    "Atrophic keratosis",
+    "Hyperplastic keratosis",
+    "SK - Solar keratosis",
+    "Senile keratoma",
+    "Solar keratosis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L57.0",
+     "name": "Actinic keratosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "20262006",
+   "pt": "Ataxia",
+   "fsn": "Ataxia",
+   "synonyms": [
+    "Ataxia (loss of muscle coordination)"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R27.0",
+     "name": "Ataxia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "202752002",
+   "pt": "Lumbar discitis",
+   "fsn": "Lumbar discitis",
+   "synonyms": [
+    "Discitis of lumbar region",
+    "lumbar disc herniation",
+    "slipped disc"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M51.26",
+     "name": "Other intervertebral disc displacement, lumbar region"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "202787002",
+   "pt": "Idiopathic lumbar spinal stenosis",
+   "fsn": "Idiopathic lumbar spinal stenosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M48.061",
+     "name": "Spinal stenosis, lumbar region without neurogenic claud"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "202855006",
+   "pt": "Lateral epicondylitis",
+   "fsn": "Lateral epicondylitis",
+   "synonyms": [
+    "Lateral epicondylitis of elbow",
+    "Tennis elbow",
+    "tennis elbow"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M77.10",
+     "name": "Lateral epicondylitis, unspecified elbow"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "202882003",
+   "pt": "Plantar fasciitis",
+   "fsn": "Plantar fasciitis",
+   "synonyms": [
+    "Policeman's heel"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "203082005",
+   "pt": "Fibromyalgia",
+   "fsn": "Fibromyalgia",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M79.7",
+     "name": "Fibromyalgia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "203337003",
+   "pt": "Paget's disease-carpal bone",
+   "fsn": "Paget's disease-carpal bone",
+   "synonyms": [
+    "Paget disease-carpal bone"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M88.9",
+     "name": "Osteitis deformans of unspecified bone"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "203508001",
+   "pt": "Bony pelvic pain",
+   "fsn": "Bony pelvic pain",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.20",
+     "name": "Pelvic and perineal pain unspecified side"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "212356007",
+   "pt": "Concussion and edema of cervical spinal cord",
+   "fsn": "Concussion and edema of cervical spinal cord (disorder)",
+   "synonyms": [
+    "mild traumatic brain injury"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "S06.0X0A",
+     "name": "Concussion without loss of consciousness, initial encounter"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "21983002",
+   "pt": "Hashimoto thyroiditis",
+   "fsn": "Hashimoto thyroiditis",
+   "synonyms": [
+    "Autoimmune lymphocytic chronic thyroiditis",
+    "Chronic lymphocytic thyroiditis",
+    "Hashimoto's disease",
+    "Hashimoto's thyroiditis",
+    "Lymphocytic thyroiditis",
+    "Struma lymphomatosa",
+    "Struma lymphomatosis",
+    "chronic lymphocytic thyroiditis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E06.3",
+     "name": "Autoimmune thyroiditis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "22325002",
+   "pt": "Abnormal gait",
+   "fsn": "Abnormal gait",
+   "synonyms": [
+    "Gait abnormality",
+    "Gait difficulty",
+    "Gait problem",
+    "unsteady gait"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R26.9",
+     "name": "Unspecified abnormalities of gait and mobility"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "225569001",
+   "pt": "Painful blind eye",
+   "fsn": "Painful blind eye",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "H57.11",
+     "name": "Ocular pain, right eye"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "230381009",
+   "pt": "Focal epilepsy",
+   "fsn": "Focal epilepsy",
+   "synonyms": [
+    "partial epilepsy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G40.109",
+     "name": "Local-rel symptc epi w simp prt seiz,not ntrct, w/o stat epi"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "230456007",
+   "pt": "Status epilepticus",
+   "fsn": "Status epilepticus",
+   "synonyms": [
+    "SE - status epilepticus"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G40.901",
+     "name": "Epilepsy, unsp, not intractable, with status epilepticus"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "230745008",
+   "pt": "Hydrocephalus",
+   "fsn": "Hydrocephalus",
+   "synonyms": [
+    "Hydrocephaly"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G91.9",
+     "name": "Hydrocephalus, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "232269003",
+   "pt": "Acute mastoiditis with facial paralysis",
+   "fsn": "Acute mastoiditis with facial paralysis",
+   "synonyms": [
+    "Acute mastoiditis and facial palsy",
+    "Bell palsy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G51.0",
+     "name": "Bell's palsy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "233850007",
+   "pt": "Infective endocarditis",
+   "fsn": "Infective endocarditis",
+   "synonyms": [
+    "IE - Infective endocarditis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I33.0",
+     "name": "Acute and subacute infective endocarditis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "233865008",
+   "pt": "Functional tricuspid regurgitation",
+   "fsn": "Functional tricuspid regurgitation",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I36.1",
+     "name": "Nonrheumatic tricuspid (valve) insufficiency"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "233873004",
+   "pt": "Hypertrophic cardiomyopathy",
+   "fsn": "Hypertrophic cardiomyopathy",
+   "synonyms": [
+    "HCM - Hypertrophic cardiomyopathy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I42.1",
+     "name": "Obstructive hypertrophic cardiomyopathy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "233964008",
+   "pt": "Internal carotid artery stenosis",
+   "fsn": "Internal carotid artery stenosis",
+   "synonyms": [
+    "ICA - Internal carotid artery stenosis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I65.29",
+     "name": "Occlusion and stenosis of unspecified carotid artery"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "234097001",
+   "pt": "Lymphedema",
+   "fsn": "Lymphedema (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I89.0",
+     "name": "Lymphedema, not elsewhere classified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "234319005",
+   "pt": "Splenectomy",
+   "fsn": "Splenectomy",
+   "synonyms": [
+    "Excision of spleen tissue"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "234347009",
+   "pt": "Anemia of chronic disorder",
+   "fsn": "Anemia of chronic disorder (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D63.8",
+     "name": "Anemia in other chronic diseases classified elsewhere"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "23502006",
+   "pt": "Lyme disease",
+   "fsn": "Lyme disease",
+   "synonyms": [
+    "Lyme borreliosis",
+    "Steere's disease"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A69.20",
+     "name": "Lyme disease, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "236407003",
+   "pt": "IgA nephropathy",
+   "fsn": "IgA nephropathy",
+   "synonyms": [
+    "IgA glomerulonephritis",
+    "IgAN - IgA nephropathy",
+    "Immunoglobulin A nephropathy",
+    "Berger disease"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N02.8",
+     "name": "Recurrent and persistent hematuria w oth morphologic changes"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "236886002",
+   "pt": "Hysterectomy",
+   "fsn": "Hysterectomy",
+   "synonyms": [
+    "Excision procedure on uterus",
+    "Uterus excision"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "237495005",
+   "pt": "Thyroid nodule",
+   "fsn": "Thyroid nodule",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E04.9",
+     "name": "Nontoxic goiter, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "239182004",
+   "pt": "Skin graft hematoma",
+   "fsn": "Skin graft hematoma (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "23924001",
+   "pt": "Tight chest",
+   "fsn": "Tight chest",
+   "synonyms": [
+    "Chest tightness",
+    "Pressure in chest"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R07.89",
+     "name": "Other chest pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "239872002",
+   "pt": "Osteoarthritis of hip",
+   "fsn": "Osteoarthritis of hip",
+   "synonyms": [
+    "Coxae malum senilis",
+    "Degenerative joint disease of hip",
+    "OA - Osteoarthritis of hip"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M16.0",
+     "name": "Bilateral primary osteoarthritis of hip"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "239873007",
+   "pt": "Osteoarthritis of knee",
+   "fsn": "Osteoarthritis of knee",
+   "synonyms": [
+    "Degenerative joint disease of knee",
+    "Gonarthrosis",
+    "Knee DJD (degenerative joint disease)",
+    "OA - Osteoarthritis of knee"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M17.0",
+     "name": "Bilateral primary osteoarthritis of knee"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "240664007",
+   "pt": "Amebic abscess of skin",
+   "fsn": "Amebic abscess of skin (disorder)",
+   "synonyms": [
+    "cutaneous abscess"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L02.91",
+     "name": "Cutaneous abscess, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "247220006",
+   "pt": "Temporal pallor of optic disc",
+   "fsn": "Temporal pallor of optic disc",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R23.1",
+     "name": "Pallor"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "247355005",
+   "pt": "Flank pain",
+   "fsn": "Flank pain",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.13",
+     "name": "Epigastric pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "2477008",
+   "pt": "Superficial thrombophlebitis",
+   "fsn": "Superficial thrombophlebitis",
+   "synonyms": [
+    "Superficial phlebitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I80.9",
+     "name": "Phlebitis and thrombophlebitis of unspecified site"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "249511005",
+   "pt": "Flatulent dyspepsia",
+   "fsn": "Flatulent dyspepsia",
+   "synonyms": [
+    "gas"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R14.3",
+     "name": "Flatulence"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "250975000",
+   "pt": "Paraprosthetic aortic regurgitation",
+   "fsn": "Paraprosthetic aortic regurgitation",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I35.1",
+     "name": "Nonrheumatic aortic (valve) insufficiency"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "25458004",
+   "pt": "Acute gastritis",
+   "fsn": "Acute gastritis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K29.00",
+     "name": "Acute gastritis without bleeding"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "254651007",
+   "pt": "Squamous cell carcinoma of skin",
+   "fsn": "Squamous cell carcinoma of skin",
+   "synonyms": [
+    "Cutaneous squamous cell carcinoma",
+    "SCC - Cutaneous squamous cell carcinoma",
+    "SCC - Squamous cell carcinoma of skin",
+    "Spinous cell carcinoma",
+    "SCC of skin"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C44.92",
+     "name": "Squamous cell carcinoma of skin, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "25501002",
+   "pt": "Social phobia",
+   "fsn": "Social phobia",
+   "synonyms": [
+    "Social anxiety disorder",
+    "social anxiety disorder"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F40.10",
+     "name": "Social phobia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "266713003",
+   "pt": "Long-term drug therapy",
+   "fsn": "Long-term drug therapy",
+   "synonyms": [
+    "on medications"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z79.899",
+     "name": "Other long term (current) drug therapy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "271558008",
+   "pt": "Infectious mononucleosis",
+   "fsn": "Infectious mononucleosis",
+   "synonyms": [
+    "GF - Glandular fever",
+    "Glandular fever",
+    "IM - Infectious mononucleosis",
+    "IM - Infective mononucleosis",
+    "Infective mononucleosis",
+    "Monocytic angina",
+    "mono"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B27.90",
+     "name": "Infectious mononucleosis, unspecified without complication"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "271771009",
+   "pt": "Joint swelling",
+   "fsn": "Joint swelling",
+   "synonyms": [
+    "Observation of joint swelling",
+    "Swollen joint"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "M25.40",
+     "name": "Effusion, unspecified joint"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "271809000",
+   "pt": "Peripheral edema",
+   "fsn": "Peripheral edema (disorder)",
+   "synonyms": [
+    "leg swelling"
+   ],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R60.0",
+     "name": "Localized edema"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "271823003",
+   "pt": "Tachypnea",
+   "fsn": "Tachypnea (finding)",
+   "synonyms": [
+    "Rapid breathing",
+    "Rapid respiration"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R06.82",
+     "name": "Tachypnea, not elsewhere classified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "27281001",
+   "pt": "Duodenal ulcer with hemorrhage",
+   "fsn": "Duodenal ulcer with hemorrhage (disorder)",
+   "synonyms": [
+    "Bleeding duodenal ulcer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K26.9",
+     "name": "Duodenal ulcer, unsp as acute or chronic, w/o hemor or perf"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "27342004",
+   "pt": "Anemia of pregnancy",
+   "fsn": "Anemia of pregnancy (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O99.012",
+     "name": "Anemia complicating pregnancy, second trimester"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "27355003",
+   "pt": "Toothache",
+   "fsn": "Toothache",
+   "synonyms": [
+    "Dentagra",
+    "Dentalgia",
+    "Odontalgia",
+    "Pain in tooth"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "27405005",
+   "pt": "Central sleep apnea syndrome",
+   "fsn": "Central sleep apnea syndrome (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G47.31",
+     "name": "Primary central sleep apnea"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "274330002",
+   "pt": "Surgical biopsy",
+   "fsn": "Surgical biopsy",
+   "synonyms": [
+    "biopsy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "274667000",
+   "pt": "Jaw pain",
+   "fsn": "Jaw pain",
+   "synonyms": [
+    "Pain of jaw"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R68.84",
+     "name": "Jaw pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "274718005",
+   "pt": "Orchitis",
+   "fsn": "Orchitis",
+   "synonyms": [
+    "Inflammation of testis",
+    "Non-specific orchitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N45.2",
+     "name": "Orchitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "275104002",
+   "pt": "Family history of stroke",
+   "fsn": "Family history of stroke",
+   "synonyms": [
+    "FH: CVA",
+    "FH: Stroke",
+    "Family history of CVA"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z82.3",
+     "name": "Family history of stroke"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "276444007",
+   "pt": "Generalized pruritus",
+   "fsn": "Generalized pruritus (finding)",
+   "synonyms": [
+    "itching"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "L29.9",
+     "name": "Pruritus, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "277762005",
+   "pt": "Lumbar puncture",
+   "fsn": "Lumbar puncture",
+   "synonyms": [
+    "LP - Lumbar puncture",
+    "Rachicentesis",
+    "Spinal puncture",
+    "Spinal tap",
+    "LP",
+    "spinal tap"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "281445000",
+   "pt": "Loosening of total hip replacement",
+   "fsn": "Loosening of total hip replacement",
+   "synonyms": [
+    "THR - Loosening of total hip replacement",
+    "total hip arthroplasty"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "282825002",
+   "pt": "Paroxysmal atrial fibrillation",
+   "fsn": "Paroxysmal atrial fibrillation",
+   "synonyms": [
+    "AF - Paroxysmal atrial fibrillation",
+    "Intermittent atrial fibrillation",
+    "PAF - Paroxysmal atrial fibrillation"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I48.0",
+     "name": "Paroxysmal atrial fibrillation"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "28442001",
+   "pt": "Polyuria",
+   "fsn": "Polyuria",
+   "synonyms": [
+    "Passes too much urine"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R35.89",
+     "name": "Other polyuria"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "285831000119108",
+   "pt": "Malignant hypertensive chronic kidney disease",
+   "fsn": "Malignant hypertensive chronic kidney disease",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I12.9",
+     "name": "Hypertensive chronic kidney disease w stg 1-4/unsp chr kdny"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "28670008",
+   "pt": "Esophageal varices",
+   "fsn": "Esophageal varices (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I85.00",
+     "name": "Esophageal varices without bleeding"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "297242006",
+   "pt": "Family history of ischemic heart disease",
+   "fsn": "Family history of ischemic heart disease (situation)",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z82.49",
+     "name": "Family hx of ischem heart dis and oth dis of the circ sys"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "29738008",
+   "pt": "Proteinuria",
+   "fsn": "Proteinuria",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R80.9",
+     "name": "Proteinuria, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "300028009",
+   "pt": "Drainage of septic arthritis",
+   "fsn": "Drainage of septic arthritis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M00.9",
+     "name": "Pyogenic arthritis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "30037006",
+   "pt": "Anal fissure",
+   "fsn": "Anal fissure",
+   "synonyms": [
+    "Fissure in ano",
+    "Nontraumatic tear of anus"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K60.2",
+     "name": "Anal fissure, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "301000119104",
+   "pt": "Muscle spasm of cervical muscle of neck",
+   "fsn": "Muscle spasm of cervical muscle of neck",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "M62.838",
+     "name": "Other muscle spasm"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "301716002",
+   "pt": "Left lower quadrant pain",
+   "fsn": "Left lower quadrant pain",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.32",
+     "name": "Left lower quadrant pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "301717006",
+   "pt": "Right upper quadrant pain",
+   "fsn": "Right upper quadrant pain",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.11",
+     "name": "Right upper quadrant pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "301754002",
+   "pt": "Right lower quadrant pain",
+   "fsn": "Right lower quadrant pain",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R10.31",
+     "name": "Right lower quadrant pain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "301770000",
+   "pt": "Aseptic meningitis",
+   "fsn": "Aseptic meningitis",
+   "synonyms": [
+    "viral meningitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G03.9",
+     "name": "Meningitis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "30285000",
+   "pt": "Verruca",
+   "fsn": "Verruca",
+   "synonyms": [
+    "Wart",
+    "Warts",
+    "wart"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B07.0",
+     "name": "Plantar wart"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "30288003",
+   "pt": "Ventricular septal defect",
+   "fsn": "Ventricular septal defect",
+   "synonyms": [
+    "Interventricular septal defect",
+    "VSD - Ventricular septal defect"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "Q21.0",
+     "name": "Ventricular septal defect"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "304712004",
+   "pt": "Beck scale for suicide ideation",
+   "fsn": "Beck scale for suicide ideation",
+   "synonyms": [
+    "SI"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R45.851",
+     "name": "Suicidal ideations"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "30746006",
+   "pt": "Lymphadenopathy",
+   "fsn": "Lymphadenopathy",
+   "synonyms": [
+    "Enlargement of lymph nodes",
+    "LA - Lymphadenopathy",
+    "LN - Lymphadenopathy",
+    "Lymphadenopathy - swelling",
+    "Swelling of lymph node",
+    "Swelling of lymph nodes",
+    "Swollen lymph glands",
+    "Swollen lymph nodes",
+    "swollen lymph nodes"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R59.9",
+     "name": "Enlarged lymph nodes, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "30800001",
+   "pt": "Vaginitis",
+   "fsn": "Vaginitis",
+   "synonyms": [
+    "Inflammation of vagina"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N76.0",
+     "name": "Acute vaginitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "309431009",
+   "pt": "Arthroscopy of knee",
+   "fsn": "Arthroscopy of knee",
+   "synonyms": [
+    "Arthroscopic procedure of knee joint",
+    "Arthroscopy of knee joint"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "31070006",
+   "pt": "Epididymitis",
+   "fsn": "Epididymitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N45.1",
+     "name": "Epididymitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "312894000",
+   "pt": "Osteopenia",
+   "fsn": "Osteopenia",
+   "synonyms": [
+    "Bone loss"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "M85.80",
+     "name": "Oth disrd of bone density and structure, unspecified site"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "315267003",
+   "pt": "Malignant neoplasm of endometrium of corpus uteri suspected",
+   "fsn": "Malignant neoplasm of endometrium of corpus uteri suspected",
+   "synonyms": [
+    "Suspected endometrial cancer",
+    "uterine cancer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C54.1",
+     "name": "Malignant neoplasm of endometrium"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "31681005",
+   "pt": "Trigeminal neuralgia",
+   "fsn": "Trigeminal neuralgia",
+   "synonyms": [
+    "Fothergill's neuralgia",
+    "TN - Trigeminal neuralgia",
+    "Tic douloureux",
+    "Trifacial neuralgia"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G50.0",
+     "name": "Trigeminal neuralgia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "31822004",
+   "pt": "Urethritis",
+   "fsn": "Urethritis",
+   "synonyms": [
+    "Inflammation of urethra"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N34.1",
+     "name": "Nonspecific urethritis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "32914008",
+   "pt": "Restless legs syndrome",
+   "fsn": "Restless legs syndrome",
+   "synonyms": [
+    "Restless legs",
+    "Willis-Ekbom disease"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G25.81",
+     "name": "Restless legs syndrome"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "3415004",
+   "pt": "Cyanosis",
+   "fsn": "Cyanosis",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R23.0",
+     "name": "Cyanosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "346544002",
+   "pt": "Lactose intolerance food",
+   "fsn": "Lactose intolerance food",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E73.9",
+     "name": "Lactose intolerance, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "34801009",
+   "pt": "Ectopic pregnancy",
+   "fsn": "Ectopic pregnancy",
+   "synonyms": [
+    "EP - Ectopic pregnancy",
+    "Extrauterine ectopic pregnancy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O00.90",
+     "name": "Unspecified ectopic pregnancy without intrauterine pregnancy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "34840004",
+   "pt": "Tendinitis",
+   "fsn": "Tendinitis",
+   "synonyms": [
+    "Inflammatory disorder of tendon",
+    "Tendonitis",
+    "tendonitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M77.9",
+     "name": "Enthesopathy, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "35304003",
+   "pt": "Cardiac tamponade",
+   "fsn": "Cardiac tamponade",
+   "synonyms": [
+    "Pericardial tamponade"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I31.4",
+     "name": "Cardiac tamponade"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "35498005",
+   "pt": "Stasis dermatitis",
+   "fsn": "Stasis dermatitis",
+   "synonyms": [
+    "Gravitational eczema",
+    "Stasis eczema"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I87.2",
+     "name": "Venous insufficiency (chronic) (peripheral)"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "35868009",
+   "pt": "Carcinoid syndrome",
+   "fsn": "Carcinoid syndrome",
+   "synonyms": [
+    "Excessive serotonin secretion"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E34.00",
+     "name": "Carcinoid syndrome, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "35885006",
+   "pt": "Hyperuricemia",
+   "fsn": "Hyperuricemia (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "E79.1",
+     "name": "Lesch-Nyhan syndrome"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "35919005",
+   "pt": "Autism spectrum disorder",
+   "fsn": "Autism spectrum disorder",
+   "synonyms": [
+    "Autism",
+    "Pervasive developmental disorder",
+    "autism"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F84.0",
+     "name": "Autistic disorder"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "359532006",
+   "pt": "Rotator cuff impingement syndrome",
+   "fsn": "Rotator cuff impingement syndrome",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M75.100",
+     "name": "Unsp rotatr-cuff tear/ruptr of unsp shoulder, not trauma"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "36024000",
+   "pt": "Gangrene",
+   "fsn": "Gangrene",
+   "synonyms": [
+    "Gangrenous"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "36083008",
+   "pt": "Sick sinus syndrome",
+   "fsn": "Sick sinus syndrome",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I49.5",
+     "name": "Sick sinus syndrome"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "363478007",
+   "pt": "Malignant neoplasm of thyroid gland",
+   "fsn": "Malignant neoplasm of thyroid gland",
+   "synonyms": [
+    "Thyroid cancer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C73",
+     "name": "Malignant neoplasm of thyroid gland"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "367336001",
+   "pt": "Chemotherapy",
+   "fsn": "Chemotherapy",
+   "synonyms": [
+    "CT - Chemotherapy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "367391008",
+   "pt": "Malaise",
+   "fsn": "Malaise",
+   "synonyms": [
+    "Does not feel right",
+    "Feels poorly",
+    "Feels unwell",
+    "Not feeling great",
+    "Not feeling well",
+    "Vague bodily discomfort"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R53.81",
+     "name": "Other malaise"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "36813001",
+   "pt": "Placenta previa",
+   "fsn": "Placenta previa (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O44.00",
+     "name": "Complete placenta previa NOS or without hemor, unsp tri"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "36989005",
+   "pt": "Mumps",
+   "fsn": "Mumps",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B26.9",
+     "name": "Mumps without complication"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "3716002",
+   "pt": "Goiter",
+   "fsn": "Goiter (disorder)",
+   "synonyms": [
+    "Enlargement of thyroid",
+    "Struma of thyroid",
+    "Swelling of thyroid gland",
+    "Thyroid enlargement",
+    "Thyromegaly"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E04.9",
+     "name": "Nontoxic goiter, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "371631005",
+   "pt": "Panic disorder",
+   "fsn": "Panic disorder",
+   "synonyms": [
+    "Episodic paroxysmal anxiety disorder"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F41.0",
+     "name": "Panic disorder [episodic paroxysmal anxiety]"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "373945007",
+   "pt": "Pericardial effusion",
+   "fsn": "Pericardial effusion",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I31.4",
+     "name": "Cardiac tamponade"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "38102005",
+   "pt": "Cholecystectomy",
+   "fsn": "Cholecystectomy",
+   "synonyms": [
+    "Excision of gallbladder",
+    "Gallbladder excision",
+    "Removal of gallbladder"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "38368003",
+   "pt": "Schizoaffective disorder, bipolar type",
+   "fsn": "Schizoaffective disorder, bipolar type",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F31.9",
+     "name": "Bipolar disorder, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "387712008",
+   "pt": "Neonatal jaundice",
+   "fsn": "Neonatal jaundice",
+   "synonyms": [
+    "Icterus neonatorum"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "P59.9",
+     "name": "Neonatal jaundice, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "389087006",
+   "pt": "Hypoxemia",
+   "fsn": "Hypoxemia (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R09.02",
+     "name": "Hypoxemia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "394726009",
+   "pt": "Seborrheic keratosis",
+   "fsn": "Seborrheic keratosis (disorder)",
+   "synonyms": [
+    "BCP - Basal cell papilloma",
+    "Basal cell papilloma",
+    "Pigmented basal cell papilloma"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L82.1",
+     "name": "Other seborrheic keratosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "396224008",
+   "pt": "Endometriosis",
+   "fsn": "Endometriosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N80.9",
+     "name": "Endometriosis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "396331005",
+   "pt": "Celiac disease",
+   "fsn": "Celiac disease (disorder)",
+   "synonyms": [
+    "GSE - Gluten-sensitive enteropathy",
+    "Gluten enteropathy",
+    "Gluten-induced enteropathy syndrome",
+    "Gluten-responsive sprue",
+    "Gluten-sensitive enteropathy",
+    "Non-tropical sprue",
+    "Nontropical sprue",
+    "Wheat-sensitive enteropathy",
+    "coeliac disease",
+    "gluten enteropathy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K90.0",
+     "name": "Celiac disease"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "396347007",
+   "pt": "Umbilical hernia",
+   "fsn": "Umbilical hernia",
+   "synonyms": [
+    "Exomphalos",
+    "Exumbilication"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K42.9",
+     "name": "Umbilical hernia without obstruction or gangrene"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "398909004",
+   "pt": "Rosacea",
+   "fsn": "Rosacea",
+   "synonyms": [
+    "Acne erythematosa",
+    "Acne rosacea"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L71.9",
+     "name": "Rosacea, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "399020009",
+   "pt": "Congestive cardiomyopathy",
+   "fsn": "Congestive cardiomyopathy (disorder)",
+   "synonyms": [
+    "CCM - Congestive cardiomyopathy",
+    "COCM - Congestive cardiomyopathy",
+    "Congestive cardiomyopathy",
+    "Congestive dilated cardiomyopathy",
+    "DCM - Dilated cardiomyopathy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "40122008",
+   "pt": "Pneumoconiosis",
+   "fsn": "Pneumoconiosis",
+   "synonyms": [
+    "PK - Pneumoconiosis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J60",
+     "name": "Coalworker's pneumoconiosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "40275004",
+   "pt": "Contact dermatitis",
+   "fsn": "Contact dermatitis",
+   "synonyms": [
+    "CD - Contact dermatitis",
+    "Contact eczema",
+    "Dermatitis venenata"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L23.9",
+     "name": "Allergic contact dermatitis, unspecified cause"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "403735006",
+   "pt": "Eosinophilia-myalgia syndrome from tryptophan",
+   "fsn": "Eosinophilia-myalgia syndrome from tryptophan",
+   "synonyms": [
+    "Tryptophan induced eosinophilia-myalgia syndrome"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "D72.10",
+     "name": "Eosinophilia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "40425004",
+   "pt": "Postconcussion syndrome",
+   "fsn": "Postconcussion syndrome",
+   "synonyms": [
+    "Nonpsychotic post-traumatic brain syndrome",
+    "Post-concussion syndrome",
+    "Post-concussional syndrome",
+    "Post-contusional encephalopathy",
+    "Post-contusional syndrome"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F07.81",
+     "name": "Postconcussional syndrome"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "404916008",
+   "pt": "Sterile maggot wound debridement",
+   "fsn": "Sterile maggot wound debridement",
+   "synonyms": [],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "40541001",
+   "pt": "Acute pulmonary edema",
+   "fsn": "Acute pulmonary edema (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J81.0",
+     "name": "Acute pulmonary edema"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "40701008",
+   "pt": "Echocardiography",
+   "fsn": "Echocardiography",
+   "synonyms": [
+    "Cardiac US scan",
+    "Cardiac echo",
+    "Echocardiogram",
+    "Echocardiographic procedure",
+    "US heart scan",
+    "US scan of heart",
+    "Ultrasonography of heart",
+    "Ultrasound of heart",
+    "echo"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "408335007",
+   "pt": "Autoimmune hepatitis",
+   "fsn": "Autoimmune hepatitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K75.4",
+     "name": "Autoimmune hepatitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "409668002",
+   "pt": "Photophobia",
+   "fsn": "Photophobia",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "414941008",
+   "pt": "Onychomycosis",
+   "fsn": "Onychomycosis",
+   "synonyms": [
+    "Fungal infection of nail",
+    "Ringworm of nail",
+    "nail fungus"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B35.1",
+     "name": "Tinea unguium"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "415105001",
+   "pt": "Placental abruption",
+   "fsn": "Placental abruption",
+   "synonyms": [
+    "Ablatio placentae",
+    "Abruptio placentae",
+    "Premature detachment of normally implanted placenta",
+    "Premature detachment of placenta",
+    "Premature separation of placenta"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O45.90",
+     "name": "Premature separation of placenta, unsp, unsp trimester"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "416675009",
+   "pt": "Furuncle",
+   "fsn": "Furuncle",
+   "synonyms": [
+    "Boil",
+    "boil"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L02.411",
+     "name": "Cutaneous abscess of right axilla"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "420852008",
+   "pt": "Transplant kidney",
+   "fsn": "Transplant kidney",
+   "synonyms": [
+    "Kidney graft - material",
+    "renal transplant"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "428041000124106",
+   "pt": "Occasional tobacco smoker",
+   "fsn": "Occasional tobacco smoker",
+   "synonyms": [
+    "smoker",
+    "current smoker"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z72.0",
+     "name": "Tobacco use"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "428061005",
+   "pt": "Malignant neoplasm of brain",
+   "fsn": "Malignant neoplasm of brain",
+   "synonyms": [
+    "brain cancer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C71.9",
+     "name": "Malignant neoplasm of brain, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "428561000",
+   "pt": "Occipital subdural hematoma",
+   "fsn": "Occipital subdural hematoma (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "S06.5X0A",
+     "name": "Traum subdr hem w/o loss of consciousness, init"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "429245005",
+   "pt": "Recurrent coronary arteriosclerosis after percutaneous transluminal coronary angioplasty",
+   "fsn": "Recurrent coronary arteriosclerosis after percutaneous transluminal coronary angioplasty",
+   "synonyms": [
+    "Coronary arteriosclerosis after percutaneous coronary angioplasty",
+    "balloon angioplasty"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "42942008",
+   "pt": "Compression fracture of vertebral column",
+   "fsn": "Compression fracture of vertebral column",
+   "synonyms": [
+    "Compression fracture of spine",
+    "VCF - vertebral compression fracture"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M80.08XA",
+     "name": "Age-rel osteopor w current path fracture, vertebra(e), init"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "430331003",
+   "pt": "Family history of cancer of the esophagus",
+   "fsn": "Family history of cancer of the esophagus (situation)",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z80.9",
+     "name": "Family history of malignant neoplasm, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "430474001",
+   "pt": "Secondary adhesive capsulitis",
+   "fsn": "Secondary adhesive capsulitis",
+   "synonyms": [
+    "Acquired adhesive capsulitis",
+    "frozen shoulder"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M75.00",
+     "name": "Adhesive capsulitis of unspecified shoulder"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "43064006",
+   "pt": "Hydronephrosis",
+   "fsn": "Hydronephrosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N13.30",
+     "name": "Unspecified hydronephrosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "432354000",
+   "pt": "Simple febrile seizure",
+   "fsn": "Simple febrile seizure",
+   "synonyms": [
+    "Simple febrile convulsion"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R56.00",
+     "name": "Simple febrile convulsions"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "433449000",
+   "pt": "Family history of ventricular premature beats",
+   "fsn": "Family history of ventricular premature beats",
+   "synonyms": [
+    "Family history of premature ventricular contractions"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I49.3",
+     "name": "Ventricular premature depolarization"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "439960005",
+   "pt": "Binge eating disorder",
+   "fsn": "Binge eating disorder",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F50.89",
+     "name": "Other specified eating disorder"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "441481004",
+   "pt": "Chronic systolic heart failure",
+   "fsn": "Chronic systolic heart failure",
+   "synonyms": [
+    "HFrEF"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I50.20",
+     "name": "Unspecified systolic (congestive) heart failure"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "441530006",
+   "pt": "Chronic diastolic heart failure",
+   "fsn": "Chronic diastolic heart failure",
+   "synonyms": [
+    "HFpEF"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I50.30",
+     "name": "Unspecified diastolic (congestive) heart failure"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "44635007",
+   "pt": "Fecal impaction",
+   "fsn": "Fecal impaction (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K56.41",
+     "name": "Fecal impaction"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "45170000",
+   "pt": "Encephalitis",
+   "fsn": "Encephalitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G04.90",
+     "name": "Encephalitis and encephalomyelitis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "46621007",
+   "pt": "Atelectasis",
+   "fsn": "Atelectasis",
+   "synonyms": [
+    "Collapse of lung",
+    "Pulmonary atelectasis",
+    "Pulmonary collapse with atelectasis",
+    "Pulmonary collapse"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J98.11",
+     "name": "Atelectasis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "46742003",
+   "pt": "Skin ulcer",
+   "fsn": "Skin ulcer",
+   "synonyms": [
+    "Cutaneous ulcer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L98.491",
+     "name": "Non-prs chronic ulcer skin/ sites limited to brkdwn skin"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "47821001",
+   "pt": "Postpartum hemorrhage",
+   "fsn": "Postpartum hemorrhage (disorder)",
+   "synonyms": [
+    "Bleeding postpartum",
+    "PPH"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O72.1",
+     "name": "Other immediate postpartum hemorrhage"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "48277006",
+   "pt": "Impetigo",
+   "fsn": "Impetigo",
+   "synonyms": [
+    "Impetigo contagiosa"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L01.00",
+     "name": "Impetigo, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "4834000",
+   "pt": "Typhoid fever",
+   "fsn": "Typhoid fever",
+   "synonyms": [
+    "Infection by Salmonella Typhi"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A01.00",
+     "name": "Typhoid fever, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "49081000119101",
+   "pt": "History of Cushing syndrome",
+   "fsn": "History of Cushing syndrome",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E24.9",
+     "name": "Cushing's syndrome, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "50325005",
+   "pt": "Alcoholic fatty liver",
+   "fsn": "Alcoholic fatty liver",
+   "synonyms": [
+    "Alcoholic fatty liver disease",
+    "hepatic steatosis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K76.0",
+     "name": "Fatty (change of) liver, not elsewhere classified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "50465008",
+   "pt": "Hernia repair",
+   "fsn": "Hernia repair",
+   "synonyms": [
+    "Herniorrhaphy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "50563003",
+   "pt": "Seborrheic dermatitis",
+   "fsn": "Seborrheic dermatitis (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L21.9",
+     "name": "Seborrheic dermatitis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "50920009",
+   "pt": "Myocarditis",
+   "fsn": "Myocarditis",
+   "synonyms": [
+    "Myocardial inflammation"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I40.9",
+     "name": "Acute myocarditis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "51292008",
+   "pt": "Hepatorenal syndrome",
+   "fsn": "Hepatorenal syndrome",
+   "synonyms": [
+    "HRF - Hepatorenal failure",
+    "Hepatorenal failure"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K76.7",
+     "name": "Hepatorenal syndrome"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "52124006",
+   "pt": "Central venous catheter",
+   "fsn": "Central venous catheter",
+   "synonyms": [
+    "CVP (central venous pressure) line",
+    "Central intravenous catheter",
+    "Central line",
+    "Central venous catheter, device",
+    "Central venous line",
+    "central line insertion"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "52254009",
+   "pt": "Nephrotic syndrome",
+   "fsn": "Nephrotic syndrome",
+   "synonyms": [
+    "NS - Nephrotic syndrome",
+    "Nephrosis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N04.9",
+     "name": "Nephrotic syndrome with unspecified morphologic changes"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "52486002",
+   "pt": "Necrotizing fasciitis",
+   "fsn": "Necrotizing fasciitis (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M72.6",
+     "name": "Necrotizing fasciitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "52613005",
+   "pt": "Excessive sweating",
+   "fsn": "Excessive sweating",
+   "synonyms": [
+    "Diaphoresis",
+    "Profuse sweating",
+    "Sweating profusely",
+    "night sweats",
+    "excessive sweating"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R61",
+     "name": "Generalized hyperhidrosis"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "54404000",
+   "pt": "Cervical radiculopathy",
+   "fsn": "Cervical radiculopathy",
+   "synonyms": [
+    "Cervical root lesion",
+    "Cervical root neuropathy",
+    "Compression of cervical nerve root"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M54.12",
+     "name": "Radiculopathy, cervical region"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "54840006",
+   "pt": "Failure to thrive",
+   "fsn": "Failure to thrive",
+   "synonyms": [
+    "FTT - failure to thrive",
+    "Faltering growth"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R62.51",
+     "name": "Failure to thrive (child)"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "5505005",
+   "pt": "Acute bronchiolitis",
+   "fsn": "Acute bronchiolitis",
+   "synonyms": [
+    "Acute capillary bronchiolitis",
+    "Capillary pneumonia"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J21.9",
+     "name": "Acute bronchiolitis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "55448001",
+   "pt": "Tracheoesophageal fistula following tracheostomy",
+   "fsn": "Tracheoesophageal fistula following tracheostomy (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "55525008",
+   "pt": "Paralytic ileus",
+   "fsn": "Paralytic ileus",
+   "synonyms": [
+    "Adynamic ileus",
+    "Paralysis of intestine"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K56.0",
+     "name": "Paralytic ileus"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "563001",
+   "pt": "Nystagmus",
+   "fsn": "Nystagmus",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "H55.89",
+     "name": "Other irregular eye movements"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "56317004",
+   "pt": "Alopecia",
+   "fsn": "Alopecia",
+   "synonyms": [
+    "Bald",
+    "Baldness",
+    "Hair loss disorder",
+    "hair loss"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L63.9",
+     "name": "Alopecia areata, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "56727007",
+   "pt": "Vitiligo",
+   "fsn": "Vitiligo",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L80",
+     "name": "Vitiligo"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "56882008",
+   "pt": "Anorexia nervosa",
+   "fsn": "Anorexia nervosa",
+   "synonyms": [
+    "AN - Anorexia nervosa"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F50.00",
+     "name": "Anorexia nervosa, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "57485005",
+   "pt": "Oxygen therapy",
+   "fsn": "Oxygen therapy",
+   "synonyms": [
+    "O2 therapy",
+    "Oxygen therapy care"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "5758002",
+   "pt": "Bacteremia",
+   "fsn": "Bacteremia (finding)",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "R78.81",
+     "name": "Bacteremia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "58405006",
+   "pt": "Keloid",
+   "fsn": "Keloid",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L91.0",
+     "name": "Hypertrophic scar"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "59455009",
+   "pt": "Metabolic acidosis",
+   "fsn": "Metabolic acidosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E87.21",
+     "name": "Acute metabolic acidosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "6020002",
+   "pt": "Tinea pedis",
+   "fsn": "Tinea pedis",
+   "synonyms": [
+    "Athlete's foot",
+    "Dermatophytosis of foot",
+    "Epidermophytosis pedis",
+    "Ringworm of foot",
+    "TP - Tinea pedis",
+    "athlete's foot"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B35.3",
+     "name": "Tinea pedis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "60380001",
+   "pt": "Narcolepsy",
+   "fsn": "Narcolepsy",
+   "synonyms": [
+    "Gelineau's syndrome",
+    "Narcoleptic syndrome",
+    "Paroxysmal sleep"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G47.419",
+     "name": "Narcolepsy without cataplexy"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "60389000",
+   "pt": "Paraplegia",
+   "fsn": "Paraplegia",
+   "synonyms": [
+    "Lower paraplegia",
+    "Paralysis of both lower limbs",
+    "Paraplegia (complete or partial paralysis of legs)"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G82.20",
+     "name": "Paraplegia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "609558009",
+   "pt": "Essential tremor",
+   "fsn": "Essential tremor",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G25.0",
+     "name": "Essential tremor"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "609588000",
+   "pt": "Prosthetic total arthroplasty of knee joint",
+   "fsn": "Prosthetic total arthroplasty of knee joint (procedure)",
+   "synonyms": [
+    "Prosthetic total arthroplasty of knee joint",
+    "Total knee arthroplasty",
+    "total knee arthroplasty"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "63480004",
+   "pt": "Chronic bronchitis",
+   "fsn": "Chronic bronchitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J42",
+     "name": "Unspecified chronic bronchitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "63491006",
+   "pt": "Intermittent claudication",
+   "fsn": "Intermittent claudication",
+   "synonyms": [
+    "Claudication",
+    "IC - Intermittent claudication",
+    "Myasthenia angiosclerotica"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "63650001",
+   "pt": "Cholera",
+   "fsn": "Cholera",
+   "synonyms": [
+    "Vibrio cholerae infection"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "A00.9",
+     "name": "Cholera, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "65147003",
+   "pt": "Twin pregnancy",
+   "fsn": "Twin pregnancy",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "O30.009",
+     "name": "Twin pregnancy, unsp num plcnta & amnio sacs, unsp trimester"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "65275009",
+   "pt": "Acute cholecystitis",
+   "fsn": "Acute cholecystitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K81.0",
+     "name": "Acute cholecystitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "65553006",
+   "pt": "Aspergillosis",
+   "fsn": "Aspergillosis",
+   "synonyms": [
+    "Infection due to Aspergillus"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B44.9",
+     "name": "Aspergillosis, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "65778007",
+   "pt": "Sinoatrial block",
+   "fsn": "Sinoatrial block",
+   "synonyms": [
+    "Sinoatrial exit block",
+    "Sinoauricular block"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "66344007",
+   "pt": "Recurrent major depression",
+   "fsn": "Recurrent major depression",
+   "synonyms": [
+    "Recurrent major depressive disorder"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F33.9",
+     "name": "Major depressive disorder, recurrent, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "66931009",
+   "pt": "Hypercalcemia",
+   "fsn": "Hypercalcemia (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "E83.52",
+     "name": "Hypercalcemia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "66999008",
+   "pt": "Hyperparathyroidism",
+   "fsn": "Hyperparathyroidism",
+   "synonyms": [
+    "HPTH - Hyperparathyroidism"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E21.0",
+     "name": "Primary hyperparathyroidism"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "67198005",
+   "pt": "Paroxysmal supraventricular tachycardia",
+   "fsn": "Paroxysmal supraventricular tachycardia",
+   "synonyms": [
+    "PSVT"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I47.10",
+     "name": "Supraventricular tachycardia, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "67335000",
+   "pt": "Asymptomatic",
+   "fsn": "Asymptomatic",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z00.00",
+     "name": "Encntr for general adult medical exam w/o abnormal findings"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "6738008",
+   "pt": "Female infertility",
+   "fsn": "Female infertility",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N97.9",
+     "name": "Female infertility, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "68226007",
+   "pt": "Acute cystitis",
+   "fsn": "Acute cystitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N30.00",
+     "name": "Acute cystitis without hematuria"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "68235000",
+   "pt": "Nasal congestion",
+   "fsn": "Nasal congestion",
+   "synonyms": [
+    "Congested nose",
+    "Stuffed-up nose",
+    "blocked nose"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R09.81",
+     "name": "Nasal congestion"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "699057005",
+   "pt": "Family history of Addison disease",
+   "fsn": "Family history of Addison disease",
+   "synonyms": [
+    "Family history of Addison's disease",
+    "primary adrenal insufficiency"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E27.1",
+     "name": "Primary adrenocortical insufficiency"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "70142008",
+   "pt": "Atrial septal defect",
+   "fsn": "Atrial septal defect",
+   "synonyms": [
+    "ASD - Atrial septal defect",
+    "Interatrial septal defect"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "Q21.10",
+     "name": "Atrial septal defect, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "702391001",
+   "pt": "Renal cell carcinoma",
+   "fsn": "Renal cell carcinoma",
+   "synonyms": [
+    "Hypernephroma",
+    "kidney cancer"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C64.1",
+     "name": "Malignant neoplasm of right kidney, except renal pelvis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "703467000",
+   "pt": "Excision of secondary malignant neoplasm",
+   "fsn": "Excision of secondary malignant neoplasm",
+   "synonyms": [
+    "metastatic cancer",
+    "cancer metastasis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C79.9",
+     "name": "Secondary malignant neoplasm of unspecified site"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "70573000",
+   "pt": "Insertion of pacemaker pulse generator",
+   "fsn": "Insertion of pacemaker pulse generator",
+   "synonyms": [],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "710815001",
+   "pt": "Long-term current use of insulin",
+   "fsn": "Long-term current use of insulin",
+   "synonyms": [],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z79.4",
+     "name": "Long term (current) use of insulin"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "711150003",
+   "pt": "Long-term current use of anticoagulant",
+   "fsn": "Long-term current use of anticoagulant",
+   "synonyms": [
+    "on warfarin"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z79.01",
+     "name": "Long term (current) use of anticoagulants"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "71186008",
+   "pt": "Croup",
+   "fsn": "Croup",
+   "synonyms": [
+    "Croup syndrome",
+    "laryngotracheobronchitis"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J05.0",
+     "name": "Acute obstructive laryngitis [croup]"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "71192002",
+   "pt": "Peritoneal dialysis",
+   "fsn": "Peritoneal dialysis",
+   "synonyms": [
+    "PD - Peritoneal dialysis"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "717978008",
+   "pt": "Bilateral lung opacities on plain chest X-ray",
+   "fsn": "Bilateral lung opacities on plain chest X-ray",
+   "synonyms": [
+    "Opacity of bilateral lungs on plain chest X-ray",
+    "chest radiograph",
+    "CXR"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "722089009",
+   "pt": "Obstructive nephropathy due to bladder cancer",
+   "fsn": "Obstructive nephropathy due to bladder cancer",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "C67.9",
+     "name": "Malignant neoplasm of bladder, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "72370007",
+   "pt": "Repair of recurrent ventral hernia",
+   "fsn": "Repair of recurrent ventral hernia",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K43.9",
+     "name": "Ventral hernia without obstruction or gangrene"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "73297009",
+   "pt": "Muscular dystrophy",
+   "fsn": "Muscular dystrophy",
+   "synonyms": [
+    "MD - Muscular dystrophy",
+    "PMD - Progressive muscular dystrophy",
+    "Progressive muscular dystrophy"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "G71.00",
+     "name": "Muscular dystrophy, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "733657002",
+   "pt": "Diverticulosis of colon",
+   "fsn": "Diverticulosis of colon",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K57.30",
+     "name": "Dvrtclos of lg int w/o perforation or abscess w/o bleeding"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "736018001",
+   "pt": "Elective upper segment cesarean section with bilateral tubal ligation",
+   "fsn": "Elective upper segment cesarean section with bilateral tubal ligation (procedure)",
+   "synonyms": [],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "75544000",
+   "pt": "Opioid dependence",
+   "fsn": "Opioid dependence",
+   "synonyms": [
+    "Narcotism",
+    "opioid addiction"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F11.20",
+     "name": "Opioid dependence, uncomplicated"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "763325000",
+   "pt": "Insulin resistance",
+   "fsn": "Insulin resistance",
+   "synonyms": [],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "7724006",
+   "pt": "Nephritic syndrome",
+   "fsn": "Nephritic syndrome",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N05.9",
+     "name": "Unsp nephritic syndrome with unspecified morphologic changes"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "773663004",
+   "pt": "Rapid-onset childhood obesity, hypothalamic dysfunction, hypoventilation, autonomic dysregulation syndrome",
+   "fsn": "Rapid-onset childhood obesity, hypothalamic dysfunction, hypoventilation, autonomic dysregulation syndrome",
+   "synonyms": [
+    "ROHHAD (rapid-onset childhood obesity, hypothalamic dysfunction, hypoventilation, autonomic dysregulation) syndrome"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "E66.2",
+     "name": "Morbid (severe) obesity with alveolar hypoventilation"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "77477000",
+   "pt": "Computed tomography",
+   "fsn": "Computed tomography",
+   "synonyms": [
+    "CAT scan",
+    "Computed axial tomography",
+    "CT scan"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "78004001",
+   "pt": "Bulimia nervosa",
+   "fsn": "Bulimia nervosa",
+   "synonyms": [
+    "BN - Bulimia nervosa",
+    "Bulimia"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F50.20",
+     "name": "Bulimia nervosa, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "783143001",
+   "pt": "Noonan syndrome-like disorder with juvenile myelomonocytic leukemia",
+   "fsn": "Noonan syndrome-like disorder with juvenile myelomonocytic leukemia (disorder)",
+   "synonyms": [
+    "CBL (Cbl proto-oncogene) syndrome",
+    "trisomy 21"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "Q90.9",
+     "name": "Down syndrome, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "8009008",
+   "pt": "Nocturnal enuresis",
+   "fsn": "Nocturnal enuresis",
+   "synonyms": [
+    "Bed wetting",
+    "Bedwetting",
+    "Nocturnal incontinence of urine",
+    "Wets bed",
+    "bedwetting"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N39.44",
+     "name": "Nocturnal enuresis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "80629001",
+   "pt": "Marsupialization of ovarian cyst",
+   "fsn": "Marsupialization of ovarian cyst (procedure)",
+   "synonyms": [],
+   "tag": "procedure",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N83.209",
+     "name": "Unspecified ovarian cyst, unspecified side"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "816159004",
+   "pt": "Measured weight gain",
+   "fsn": "Measured weight gain (observable entity)",
+   "synonyms": [
+    "Measured weight gain"
+   ],
+   "tag": "observable entity",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R63.5",
+     "name": "Abnormal weight gain"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "81996005",
+   "pt": "Torsion of testis",
+   "fsn": "Torsion of testis",
+   "synonyms": [
+    "Testicular torsion",
+    "Torsion of testicle"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "N44.00",
+     "name": "Torsion of testis, unspecified"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "82127005",
+   "pt": "Perianal abscess",
+   "fsn": "Perianal abscess",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K61.0",
+     "name": "Anal abscess"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "82403002",
+   "pt": "Cholangitis",
+   "fsn": "Cholangitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "K83.09",
+     "name": "Other cholangitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "83128009",
+   "pt": "Oliguria",
+   "fsn": "Oliguria",
+   "synonyms": [
+    "Oligouria",
+    "Passes too little urine"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R34",
+     "name": "Anuria and oliguria"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "84017003",
+   "pt": "Bursitis",
+   "fsn": "Bursitis",
+   "synonyms": [
+    "Inflammation of bursa"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M71.9",
+     "name": "Bursopathy, unspecified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "84027009",
+   "pt": "Pernicious anemia",
+   "fsn": "Pernicious anemia (disorder)",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "D51.0",
+     "name": "Vitamin B12 defic anemia due to intrinsic factor deficiency"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "84445001",
+   "pt": "Joint stiffness",
+   "fsn": "Joint stiffness",
+   "synonyms": [
+    "Stiff joint"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "M25.60",
+     "name": "Stiffness of unspecified joint, not elsewhere classified"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "8517006",
+   "pt": "Ex-smoker",
+   "fsn": "Ex-smoker",
+   "synonyms": [
+    "Former smoker",
+    "former smoker",
+    "quit smoking"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z87.891",
+     "name": "Personal history of nicotine dependence"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "85598007",
+   "pt": "Constrictive pericarditis",
+   "fsn": "Constrictive pericarditis",
+   "synonyms": [
+    "Pick disease of heart",
+    "Pick syndrome of heart"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I31.1",
+     "name": "Chronic constrictive pericarditis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "8635005",
+   "pt": "Alcohol withdrawal delirium",
+   "fsn": "Alcohol withdrawal delirium",
+   "synonyms": [
+    "DTs - delirium tremens",
+    "Delirium tremens"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "F10.231",
+     "name": "Alcohol dependence with withdrawal delirium"
+    }
+   ],
+   "resolvedBy": "ontoserver-expand+v2-merge-20261002"
+  },
+  {
+   "id": "86466006",
+   "pt": "Rheumatic mitral stenosis",
+   "fsn": "Rheumatic mitral stenosis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I05.0",
+     "name": "Rheumatic mitral stenosis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "87317003",
+   "pt": "Respiratory arrest",
+   "fsn": "Respiratory arrest",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "R09.2",
+     "name": "Respiratory arrest"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "87486003",
+   "pt": "Aphasia",
+   "fsn": "Aphasia",
+   "synonyms": [
+    "Aphasic disturbance",
+    "Loss of power of expression or comprehension"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "R47.01",
+     "name": "Aphasia"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "8765009",
+   "pt": "Hematemesis",
+   "fsn": "Hematemesis (disorder)",
+   "synonyms": [
+    "Vomiting blood",
+    "Vomiting of blood",
+    "vomiting blood"
+   ],
+   "tag": "disorder",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "K92.0",
+     "name": "Hematemesis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "87715008",
+   "pt": "Xerostomia",
+   "fsn": "Xerostomia",
+   "synonyms": [
+    "Absent salivary secretion",
+    "Aptyalia",
+    "Aptyalism",
+    "Asialia",
+    "Clinical xerostomia",
+    "Dry mouth",
+    "dry mouth"
+   ],
+   "tag": "finding",
+   "role": "secondary",
+   "icd10cm": [
+    {
+     "code": "K11.7",
+     "name": "Disturbances of salivary secretion"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "88616000",
+   "pt": "Acne vulgaris",
+   "fsn": "Acne vulgaris",
+   "synonyms": [
+    "Common acne"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "L70.0",
+     "name": "Acne vulgaris"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "89138009",
+   "pt": "Cardiogenic shock",
+   "fsn": "Cardiogenic shock",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "R57.0",
+     "name": "Cardiogenic shock"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "89666000",
+   "pt": "Cardiopulmonary resuscitation",
+   "fsn": "Cardiopulmonary resuscitation",
+   "synonyms": [
+    "CPR - Cardiopulmonary resuscitation",
+    "CPR"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "90979004",
+   "pt": "Chronic tonsillitis",
+   "fsn": "Chronic tonsillitis",
+   "synonyms": [],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "J35.01",
+     "name": "Chronic tonsillitis"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "91251008",
+   "pt": "Physical therapy procedure",
+   "fsn": "Physical therapy procedure",
+   "synonyms": [
+    "PT - Physiotherapy",
+    "Physiotherapy procedure",
+    "Physiotherapy",
+    "physiotherapy"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "91602002",
+   "pt": "Thoracentesis",
+   "fsn": "Thoracentesis",
+   "synonyms": [
+    "Chest aspiration",
+    "Pleural aspiration",
+    "Pleural cavity tap",
+    "Pleural tap",
+    "Pleurocentesis",
+    "Thoracic paracentesis",
+    "Thoracocentesis"
+   ],
+   "tag": "procedure",
+   "role": "supplemental",
+   "icd10cm": [],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "916081000168105",
+   "pt": "Pneumocystis jiroveci pneumonia prophylaxis",
+   "fsn": "Pneumocystis jiroveci pneumonia prophylaxis",
+   "synonyms": [
+    "PJP",
+    "PCP pneumonia"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "B59",
+     "name": "Pneumocystosis"
+    }
+   ],
+   "resolvedBy": "ontoserver-only+v2-merge-20261002"
+  },
+  {
+   "id": "91936005",
+   "pt": "Allergy to penicillin",
+   "fsn": "Allergy to penicillin",
+   "synonyms": [
+    "Penicillin allergy",
+    "penicillin allergy"
+   ],
+   "tag": "situation",
+   "role": "supplemental",
+   "icd10cm": [
+    {
+     "code": "Z88.0",
+     "name": "Allergy status to penicillin"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "9631008",
+   "pt": "Ankylosing spondylitis",
+   "fsn": "Ankylosing spondylitis",
+   "synonyms": [
+    "AS - Ankylosing spondylitis",
+    "Bekhterev's disease",
+    "Idiopathic ankylosing spondylitis",
+    "Marie Strümpell spondylitis",
+    "Marie-Strumpell spondylitis",
+    "Spondylosis deformans"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "M45.0",
+     "name": "Ankylosing spondylitis of multiple sites in spine"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
+  },
+  {
+   "id": "9651007",
+   "pt": "Long QT syndrome",
+   "fsn": "Long QT syndrome",
+   "synonyms": [
+    "Long Q-T syndrome",
+    "Prolonged Q-T interval syndrome"
+   ],
+   "tag": "disorder",
+   "role": "primary",
+   "icd10cm": [
+    {
+     "code": "I45.81",
+     "name": "Long QT syndrome"
+    }
+   ],
+   "resolvedBy": "ols4-search+v2-merge-20261002"
   }
  ]
 }

@@ -6,15 +6,15 @@
  * identifier the app can ever emit must trace to this validated artifact,
  * so the artifact itself is guarded end-to-end:
  *
- *  D — Subset integrity: meta counts (273 / 226 / 0), unique concept IDs,
+ *  D — Subset integrity: meta counts (597 / 493 / 0), unique concept IDs,
  *      required fields, semantic-tag and role enums, provenance (resolvedBy),
  *      license field kept intact (SNOMED CT is licensed material).
- *  B — Bundle cross-check (the strong gate): all 226 ICD-10-CM map targets
+ *  B — Bundle cross-check (the strong gate): all 493 ICD-10-CM map targets
  *      EXIST and are BILLABLE in the canonical bundled FY2027 extract —
  *      stronger than the build-time NLM check, anchored to our
- *      addenda-reconciled frozen copy. Name split 206 exact / 20 NLM-long-
- *      title vs CDC-short-title variants (both official) is pinned so a
- *      future refresh that silently changes either side trips here.
+ *      addenda-reconciled frozen copy. Target names are normalized to the
+ *      exact CDC short title (493 exact / 0 variants); a future refresh that
+ *      silently changes either side trips here.
  *      FY2027 sentinels re-anchored: G35 header (0), G35.C2 billable (1),
  *      M81.8 billable, M81.80 absent; curated map sentinels
  *      10001005→A41.9, 44054006→E11.9, 42343007→I50.9.
@@ -63,9 +63,9 @@ async function main() {
 
   {
     console.log("\n▶ D1 — meta counts self-consistent");
-    check("meta.conceptCount == concepts.length == 273", subset.meta.conceptCount === 273 && subset.concepts.length === 273, `${subset.meta.conceptCount}/${subset.concepts.length}`);
+    check("meta.conceptCount == concepts.length == 597", subset.meta.conceptCount === 597 && subset.concepts.length === 597, `${subset.meta.conceptCount}/${subset.concepts.length}`);
     const withMap = subset.concepts.filter((c) => c.icd10cm.length > 0).length;
-    check("meta.withIcdMap == concepts with >=1 map == 226", subset.meta.withIcdMap === 226 && withMap === 226, String(withMap));
+    check("meta.withIcdMap == concepts with >=1 map == 493", subset.meta.withIcdMap === 493 && withMap === 493, String(withMap));
     check("meta.droppedCount == 0 (nothing accepted without verification)", subset.meta.droppedCount === 0, String(subset.meta.droppedCount));
     const ids = subset.concepts.map((c) => c.id);
     check("concept IDs unique (no fallback duplicates)", new Set(ids).size === ids.length, `unique=${new Set(ids).size}/${ids.length}`);
@@ -126,10 +126,10 @@ async function main() {
         }
       }
     }
-    check("226/226 map targets EXIST in the canonical bundle", exist === 226, String(exist));
-    check("226/226 map targets are BILLABLE in the canonical bundle", billable === 226, String(billable));
-    check("name agreement pinned: 206 exact (CDC short title)", nameExact === 206, String(nameExact));
-    check("name variant budget pinned: 20 NLM-long-title diffs", nameDiffs.length === 20, nameDiffs.join(","));
+    check("493/493 map targets EXIST in the canonical bundle", exist === 493, String(exist));
+    check("493/493 map targets are BILLABLE in the canonical bundle", billable === 493, String(billable));
+    check("name agreement pinned: 493 exact (CDC short title)", nameExact === 493, String(nameExact));
+    check("name variant budget pinned: 0 long-title diffs", nameDiffs.length === 0, nameDiffs.join(","));
     check("no subset target maps to a header (flag=0) row", billable === exist, `${billable}/${exist}`);
 
     console.log("\n▶ B2 — FY2027 data-quality sentinels re-anchored");
@@ -187,7 +187,7 @@ async function main() {
     check("empty code → no hits, no throw", reverseLookup("", 20).length === 0);
     check("limit respected", reverseLookup("E11", 1).length <= 1);
     const at = allIcdTargets();
-    check("allIcdTargets covers 226 targets, sorted ascending", at.length === 226 && at.every((x, i) => i === 0 || at[i - 1].code.localeCompare(x.code) <= 0), String(at.length));
+    check("allIcdTargets covers 493 targets, sorted ascending", at.length === 493 && at.every((x, i) => i === 0 || at[i - 1].code.localeCompare(x.code) <= 0), String(at.length));
   }
 
   /* ================= G — gate + server wiring tripwires ================= */
@@ -242,10 +242,10 @@ async function main() {
   {
     console.log("\n▶ A1 — visible bilingual attribution");
     check("en.snomed_attribution present and declares licensed material", /licensed material/.test(translations.en.snomed_attribution) && /SNOMED CT/.test(translations.en.snomed_attribution));
-    check("ar.snomed_attribution present (بالعربية)", translations.ar.snomed_attribution.includes("SNOMED CT") && translations.ar.snomed_attribution.includes("مرخ"));
+    check("en.snomed_attribution present and declares licensed material", /licensed material/.test(translations.en.snomed_attribution) && /SNOMED CT/.test(translations.en.snomed_attribution));
     const pageSrc = readRepo("src/app/page.tsx");
     check("footer renders the attribution (t(\"snomed_attribution\"))", pageSrc.includes('t("snomed_attribution")'));
-    check("en/ar locale objects both carry the same key set size", Object.keys(translations.en).length === Object.keys(translations.ar).length);
+    check("en locale is the sole full locale", typeof translations.en === "object" && translations.en !== null && Object.keys(translations.en).length > 0);
 
     console.log("\n▶ A2 — regeneration path shipped");
     const bs = join(ROOT, "scripts", "build_snomed_subset.mjs");

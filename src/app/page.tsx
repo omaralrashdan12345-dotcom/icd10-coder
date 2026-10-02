@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -48,10 +48,21 @@ import { LLM_PROVIDERS, type LLMProviderId, type LLMProviderMetaWithStatus } fro
 
 // Fallback list used when /api/providers hasn't returned yet (or failed).
 // The provider meta entries lack `configured`; at runtime `configured ?? available`
-// gives the right static hint, so cast is safe — see LLM_PROVIDERS docs.
+// gives the right static hint, so cast is safe â€” see LLM_PROVIDERS docs.
 const FALLBACK_PROVIDERS = LLM_PROVIDERS as LLMProviderMetaWithStatus[];
 import type { CodingApiResponse } from "@/lib/schemas/icd";
 import { CodeCard, EmptyCodeCard } from "@/components/icd/code-card";
+import { SnomedPanel } from "@/components/icd/snomed-panel";
+import { HistoryPanel } from "@/components/icd/history-panel";
+import {
+  addHistoryEntry,
+  findHistoryByNote,
+  historyId,
+  loadHistory,
+  persistHistory,
+  type HistoryEntry,
+} from "@/lib/history";
+import type { CodingResult } from "@/lib/snomed/types";
 import { ValidationPanel, RAGContextPanel } from "@/components/icd/panels";
 import { SettingsDialog, buildProviderKeysHeader } from "@/components/icd/settings-dialog";
 import { AppearanceMenu } from "@/components/icd/appearance-menu";
@@ -92,6 +103,8 @@ export default function Home() {
   const [model, setModel] = useState<LLMProviderId>("auto");
   const [note, setNote] = useState("");
   const [result, setResult] = useState<CodingApiResponse | null>(null);
+  const [snomed, setSnomed] = useState<CodingResult | null>(null);
+  const [snomedLoading, setSnomedLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rawOpen, setRawOpen] = useState(false);
@@ -100,6 +113,12 @@ export default function Home() {
   const [providersVersion, setProvidersVersion] = useState(0);
   const [dbStatus, setDbStatus] = useState<FullDbStatus | null>(null);
   const [verification, setVerification] = useState<Record<string, "ok" | "category" | "missing">>({});
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  useEffect(() => {
+    setHistory(loadHistory());
+  }, []);
   const resultsRef = useRef<HTMLDivElement>(null);
   const analyzeRef = useRef<() => void>(() => {});
 
@@ -119,7 +138,7 @@ export default function Home() {
         }
       })
       .catch(() => {
-        // ignore — UI falls back to static list
+        // ignore â€” UI falls back to static list
       });
   }, [providersVersion]);
 
@@ -145,10 +164,10 @@ export default function Home() {
       ]
     : [];
 
-  // Existence verification (Sprint 2 — idea I): check every returned code
+  // Existence verification (Sprint 2 â€” idea I): check every returned code
   // against the full offline dataset once it is available. Non-blocking.
   // Three states: "ok" (billable code exists), "category" (exists but is a
-  // non-billable category header — needs more specificity), "missing".
+  // non-billable category header â€” needs more specificity), "missing".
   const dbState = dbStatus?.state ?? "idle";
   const dbVersion = dbStatus?.version ?? null;
   useEffect(() => {
@@ -168,8 +187,21 @@ export default function Home() {
 
   async function handleAnalyze() {
     if (!note.trim()) return;
+    // History: an already-coded note restores instantly - no re-search.
+    const cached = findHistoryByNote(loadHistory(), note);
+    if (cached) {
+      setNote(cached.note);
+      setResult(cached.result);
+      setSnomed(cached.snomed);
+      setError(null);
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+      return;
+    }
     setLoading(true);
     setError(null);
+    let snomedFinal: CodingResult | null = null;
     try {
       const keysHeader = buildProviderKeysHeader();
       const res = await fetch("/api/code", {
@@ -185,6 +217,40 @@ export default function Home() {
         throw new Error(data.error || `HTTP ${res.status}`);
       }
       setResult(data as CodingApiResponse);
+      // Parallel: run the SNOMED CT engine on the same note (dedicated panel).
+      setSnomedLoading(true);
+      try {
+        const snomedRes = await fetch("/api/snomed/coding", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(keysHeader ? { "x-provider-keys": keysHeader } : {}),
+          },
+          body: JSON.stringify({ text: note }),
+        });
+        const snomedData = await snomedRes.json();
+        if (snomedRes.ok) {
+          setSnomed(snomedData as CodingResult);
+          snomedFinal = snomedData as CodingResult;
+        } else {
+          setSnomed(null);
+        }
+      } catch {
+        setSnomed(null);
+      } finally {
+        setSnomedLoading(false);
+      }
+      // Autosave locally on this machine (browser storage) - both engine payloads.
+      const entry: HistoryEntry = {
+        id: historyId(),
+        ts: Date.now(),
+        note,
+        result: data as CodingApiResponse,
+        snomed: snomedFinal,
+      };
+      const nextHistory = addHistoryEntry(loadHistory(), entry);
+      persistHistory(nextHistory);
+      setHistory(nextHistory);
       // Smooth-scroll to results on mobile
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -247,16 +313,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
-              aria-label="Toggle language"
-              className="h-9 px-2.5 sm:h-10"
-            >
-              <Languages className="h-4 w-4 ltr:mr-1.5 rtl:ml-1.5 sm:ltr:mr-2 sm:rtl:ml-2" />
-              <span className="text-xs sm:text-sm">{t("language_toggle")}</span>
-            </Button>
             <AppearanceMenu locale={locale} />
             <OfflineDataDialog locale={locale} />
             <SettingsDialog locale={locale} onKeysChanged={() => setProvidersVersion((v) => v + 1)} />
@@ -324,7 +380,7 @@ export default function Home() {
                                 )}
                               </div>
                               <span className="text-xs text-muted-foreground truncate">
-                                {locale === "ar" ? p.description_ar : p.description_en}
+                                {p.description_en}
                               </span>
                             </div>
                           </SelectItem>
@@ -345,28 +401,28 @@ export default function Home() {
                           <a href="https://console.groq.com/keys" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             console.groq.com/keys
                           </a>{" "}
-                          → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GROQ_API_KEY</code>
+                          â†’ set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GROQ_API_KEY</code>
                         </li>
                         <li>
                           <strong>Google Gemini</strong> (free, 1M context):{" "}
                           <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             aistudio.google.com/app/apikey
                           </a>{" "}
-                          → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GEMINI_API_KEY</code>
+                          â†’ set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">GEMINI_API_KEY</code>
                         </li>
                         <li>
                           <strong>OpenRouter</strong> (free Llama / Gemma):{" "}
                           <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" className="brand-text hover:underline">
                             openrouter.ai/keys
                           </a>{" "}
-                          → set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">OPENROUTER_API_KEY</code>
+                          â†’ set <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">OPENROUTER_API_KEY</code>
                         </li>
                       </ul>
                     </details>
                   )}
                 </div>
 
-                {/* Sample cases — horizontal scroll on mobile */}
+                {/* Sample cases â€” horizontal scroll on mobile */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground">{t("sample_cases")}</Label>
                   <div className="flex w-full min-w-0 gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible chip-scroll">
@@ -377,11 +433,34 @@ export default function Home() {
                         onClick={() => setNote(c.text)}
                         className="shrink-0 whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
                       >
-                        {locale === "ar" ? c.label_ar : c.label_en}
+                        {c.label_en}
                       </button>
                     ))}
                   </div>
                 </div>
+
+                {/* History - autosaved locally on this machine */}
+                <HistoryPanel
+                  entries={history}
+                  open={historyOpen}
+                  onToggle={() => setHistoryOpen((o) => !o)}
+                  onRestore={(e) => {
+                    setNote(e.note);
+                    setResult(e.result);
+                    setSnomed(e.snomed);
+                    setError(null);
+                  }}
+                  onDelete={(id) => {
+                    const next = loadHistory().filter((x) => x.id !== id);
+                    persistHistory(next);
+                    setHistory(next);
+                  }}
+                  onClear={() => {
+                    persistHistory([]);
+                    setHistory([]);
+                  }}
+                  locale={locale}
+                />
 
                 {/* Textarea */}
                 <div className="space-y-1.5">
@@ -402,7 +481,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Buttons — inline on desktop, sticky bottom bar on mobile */}
+                {/* Buttons â€” inline on desktop, sticky bottom bar on mobile */}
                 <div className="hidden sm:flex flex-wrap gap-2">
                   <Button
                     onClick={handleAnalyze}
@@ -472,7 +551,7 @@ export default function Home() {
 
           {/* Results Column */}
           <section ref={resultsRef} className="min-w-0 space-y-4 print:space-y-3">
-            {/* Results header bar — print-only visible */}
+            {/* Results header bar â€” print-only visible */}
             <div className="hidden print:block mb-4">
               <h1 className="text-xl font-bold">{t("app_title")}</h1>
               <p className="text-sm text-muted-foreground">{t("app_subtitle")}</p>
@@ -507,7 +586,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Mobile code summary strip — big, tappable, copyable */}
+                {/* Mobile code summary strip â€” big, tappable, copyable */}
                 <div className="rounded-xl border-2 border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 print:hidden sm:hidden">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -584,7 +663,13 @@ export default function Home() {
                 {/* Validation */}
                 <ValidationPanel issues={result.validation_issues} locale={locale} />
 
-                {/* RAG context */}
+                {/* SNOMED CT Concepts — dedicated panel fed by the /api/snomed/coding engine */}
+                <SnomedPanel
+                  result={snomed}
+                  loading={snomedLoading}
+                  locale={locale}
+                  icdCodes={result ? [result.raw_response.primary_icd10.code, ...result.raw_response.secondary_icd10.map((c) => c.code), ...result.raw_response.tertiary_icd10.map((c) => c.code)] : []}
+                />
                 <RAGContextPanel
                   results={result.rag_context}
                   nlmOnline={result.rag_context.some((r) => r.source === "nlm")}
@@ -677,7 +762,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Sticky mobile action bar — Analyze always reachable */}
+      {/* Sticky mobile action bar â€” Analyze always reachable */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 p-3 pb-safe backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95 print:hidden sm:hidden">
         <div className="flex gap-2">
           <Button

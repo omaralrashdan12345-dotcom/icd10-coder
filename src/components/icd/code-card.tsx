@@ -224,15 +224,15 @@ export function EmptyCodeCard({ level, locale, count }: EmptyCodeCardProps) {
             <Badge variant="outline" className={cn("text-[10px] uppercase tracking-wide", style.chip)}>{levelLabel}</Badge>
             <p className="mt-1 text-sm text-muted-foreground">
               {level === "primary"
-                ? locale === "ar" ? "في انتظار التحليل…" : "Awaiting analysis…"
-                : locale === "ar" ? `${count} رمز ثانوي` : `${count} ${level} codes`}
+                ? "Awaiting analysis…"
+                : `${count} ${level} codes`}
             </p>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-center h-16 text-xs text-muted-foreground">
-          {targetCount === 1 ? (locale === "ar" ? "—" : "—") : (locale === "ar" ? "لا توجد رموز" : "no codes")}
+          {targetCount === 1 ? "—" : "no codes"}
         </div>
       </CardContent>
     </Card>

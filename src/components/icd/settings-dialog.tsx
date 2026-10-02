@@ -173,21 +173,19 @@ export function SettingsDialog({ locale, onKeysChanged }: SettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label={locale === "ar" ? "الإعدادات" : "Settings"} title={locale === "ar" ? "الإعدادات" : "Settings"}>
+        <Button variant="ghost" size="sm" aria-label={"Settings"} title={"Settings"}>
           <Settings className="h-4 w-4" />
-          <span className="hidden sm:inline ltr:ml-2 rtl:mr-2">{locale === "ar" ? "مفاتيح API" : "API Keys"}</span>
+          <span className="hidden sm:inline ltr:ml-2 rtl:mr-2">{"API Keys"}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <KeyRound className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            {locale === "ar" ? "مفاتيح API" : "API Keys"}
+            {"API Keys"}
           </DialogTitle>
           <DialogDescription>
-            {locale === "ar"
-              ? "ألصق مفاتيح API هنا لتشغيل النماذج المجانية. تُحفظ المفاتيح في متصفحك فقط (localStorage) ولا تُرسل لأي خادم آخر."
-              : "Paste your free API keys here to enable the models. Keys are stored in your browser only (localStorage) and never sent to any other server."}
+            {"Paste your free API keys here to enable the models. Keys are stored in your browser only (localStorage) and never sent to any other server."}
           </DialogDescription>
         </DialogHeader>
 
@@ -200,7 +198,7 @@ export function SettingsDialog({ locale, onKeysChanged }: SettingsDialogProps) {
               <div key={pk.envVar} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <Label htmlFor={pk.envVar} className="text-xs font-medium">
-                    {locale === "ar" ? pk.label_ar : pk.label_en}
+                    {pk.label_en}
                   </Label>
                   <a
                     href={pk.signup_url}
@@ -208,7 +206,7 @@ export function SettingsDialog({ locale, onKeysChanged }: SettingsDialogProps) {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline"
                   >
-                    {locale === "ar" ? "احصل على مفتاح" : "Get key"}
+                    {"Get key"}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
@@ -243,7 +241,7 @@ export function SettingsDialog({ locale, onKeysChanged }: SettingsDialogProps) {
                     {testState?.loading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <span>{locale === "ar" ? "اختبار" : "Test"}</span>
+                      <span>{"Test"}</span>
                     )}
                   </Button>
                 </div>
@@ -282,24 +280,22 @@ export function SettingsDialog({ locale, onKeysChanged }: SettingsDialogProps) {
         </div>
 
         <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 p-2.5 text-[11px] text-amber-700 dark:text-amber-300">
-          {locale === "ar"
-            ? "🔒 المفاتيح تُحفظ في متصفحك فقط. امسحها بزر 'حذف الكل' قبل استخدام التطبيق على جهاز مشترك."
-            : "🔒 Keys are stored in your browser only. Click 'Clear all' before using this app on a shared device."}
+          {"🔒 Keys are stored in your browser only. Click 'Clear all' before using this app on a shared device."}
         </div>
 
         <DialogFooter className="gap-2">
           <Button variant="ghost" size="sm" onClick={handleClear} className="text-rose-600 hover:text-rose-700">
             <Trash2 className="h-3.5 w-3.5 ltr:mr-1.5 rtl:ml-1.5" />
-            {locale === "ar" ? "حذف الكل" : "Clear all"}
+            {"Clear all"}
           </Button>
           <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white">
             {saved ? (
               <>
                 <CheckCircle2 className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                {locale === "ar" ? "تم الحفظ" : "Saved"}
+                {"Saved"}
               </>
             ) : (
-              locale === "ar" ? "حفظ" : "Save"
+              "Save"
             )}
           </Button>
         </DialogFooter>

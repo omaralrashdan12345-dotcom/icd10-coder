@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { getLLMProvider, type LLMProviderId } from "@/lib/llm";
 import { ragSearch } from "@/lib/icd/rag";
 import { validateResponse } from "@/lib/icd/validation";
@@ -32,6 +33,54 @@ function isNetworkError(err: unknown): boolean {
     msg.includes("could not reach") ||
     msg.includes("api timed out")
   );
+}
+
+type AnyRec = Record<string, unknown>;
+
+/** If the payload is wrapped one level deep ({"response": {...}} or [ {...} ]), unwrap it. */
+function unwrapPayload(p: unknown): AnyRec {
+  let cur = (Array.isArray(p) ? p[0] : p) as AnyRec;
+  for (let i = 0; i < 3 && cur && typeof cur === "object"; i++) {
+    const keys = Object.keys(cur);
+    const only = keys.length === 1 ? (cur as AnyRec)[keys[0]] : undefined;
+    if (only !== undefined && typeof only === "object" && only !== null && !Array.isArray(only)) {
+      cur = only as AnyRec;
+      continue;
+    }
+    break;
+  }
+  return cur ?? {};
+}
+
+/** Case-insensitive, punctuation-tolerant key lookup. */
+function pickKey(obj: AnyRec, aliases: string[]): unknown {
+  const map = new Map(Object.keys(obj).map((k) => [k.toLowerCase().replace(/[\s-]/g, "_"), k]));
+  for (const a of aliases) {
+    const k = map.get(a);
+    if (k !== undefined) return obj[k];
+  }
+  return undefined;
+}
+
+/** Normalize common LLM key drift into the ClinicalCodingResponse shape (no-op if already clean). */
+function repairCodingShape(p: unknown): AnyRec {
+  const cur = unwrapPayload(p);
+  const out: AnyRec = { ...cur };
+  const primary = pickKey(cur, ["primary_icd10", "primary_dx", "primary_diagnosis", "principal_icd10"]);
+  if (primary !== undefined) {
+    out.primary_icd10 = typeof primary === "string" ? { code: primary } : primary;
+  }
+  const groups: Array<[string, string[]]> = [
+    ["secondary_icd10", ["secondary_icd10", "secondary_diagnoses", "secondary_dx"]],
+    ["tertiary_icd10", ["tertiary_icd10", "tertiary_diagnoses", "tertiary_dx", "external_cause_icd10"]],
+    ["entities_extracted", ["entities_extracted", "extracted_entities", "entities"]],
+    ["summary", ["summary", "clinical_summary"]],
+  ];
+  for (const [field, aliases] of groups) {
+    const v = pickKey(cur, aliases);
+    if (v !== undefined) out[field] = v;
+  }
+  return out;
 }
 
 export async function POST(req: NextRequest) {
@@ -82,12 +131,18 @@ export async function POST(req: NextRequest) {
     // 2. LLM coding
     const { parsed, raw } = await provider.generateCoding(note, ragContext);
 
+    // 2b. Shape repair: LLMs drift on key casing/naming or wrap the payload one
+    // level deep. Unwrap and remap aliases BEFORE validation so a good clinical
+    // answer is not wasted on a technicality; unrepairable output still falls
+    // back to offline via the ZodError guard below.
+    const repaired = repairCodingShape(parsed);
+
     // 3. Schema-validate the LLM output (coerce defaults)
     const validated = ClinicalCodingResponseSchema.parse({
-      ...parsed,
-      secondary_icd10: parsed.secondary_icd10 ?? [],
-      tertiary_icd10: parsed.tertiary_icd10 ?? [],
-      entities_extracted: parsed.entities_extracted ?? [],
+      ...repaired,
+      secondary_icd10: repaired.secondary_icd10 ?? [],
+      tertiary_icd10: repaired.tertiary_icd10 ?? [],
+      entities_extracted: repaired.entities_extracted ?? [],
     });
 
     // 3b. External-cause guarantee: any injury (S/T) encounter MUST carry an
@@ -111,10 +166,11 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : String(err);
 
     // === UNIVERSAL OFFLINE FALLBACK ===
-    // If the selected provider failed with a network error, automatically
-    // fall back to the Smart Offline Coder so the user ALWAYS gets a result.
-    // We add a note to the summary so the user knows what happened.
-    if (isNetworkError(err) && providerId !== "mock") {
+    // If the selected provider failed with a network error OR its response
+    // failed Zod shape validation (e.g. missing/invalid primary_icd10),
+    // automatically fall back to the Smart Offline Coder so the user ALWAYS
+    // gets a result. We add a note to the summary so the user knows what happened.
+    if ((isNetworkError(err) || err instanceof ZodError) && providerId !== "mock") {
       try {
         const offlineProvider = getLLMProvider("mock");
         const offlineResult = await offlineProvider.generateCoding(note, ragContext);
