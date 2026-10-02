@@ -17,6 +17,7 @@
  */
 
 import { chapterOfCode, normCode } from "./chapters";
+import { expandToken, stem } from "./query-expand";
 
 export interface FullDbStatus {
   state: "idle" | "seeding" | "ready" | "error";
@@ -194,9 +195,24 @@ function idbSwapDataset(
 let codeMap: Map<string, CodeRecord> | null = null;
 let codeList: string[] = [];
 let searchIndex: Map<string, number[]> | null = null;
+let docLens: number[] = [];
+let avgDocLen = 1;
 let indexBuilding = false;
 let indexReadyPromise: Promise<void> | null = null;
 let ensurePromise: Promise<void> | null = null;
+
+/**
+ * BM25 parameters for the full-code-set ranker. k1 controls term-frequency
+ * saturation (postings store tf=1, so it mostly shapes the length norm) and b
+ * controls how strongly long descriptions are penalized. Tuned so short,
+ * specific descriptions outrank long "…, unspecified" tails without burying
+ * genuinely specific multi-word targets.
+ */
+const K1 = 1.3;
+const B = 0.7;
+/** Phrase (contiguous query) bonus and adjacent-bigram bonus multipliers. */
+const PHRASE_BONUS = 2.4;
+const BIGRAM_BONUS = 0.9;
 
 interface ChunkShape {
   from: string;
@@ -228,6 +244,8 @@ function loadIntoMemory(chunks: ChunkShape[]): void {
   }
   codeList.sort();
   searchIndex = null;
+  docLens = [];
+  avgDocLen = 1;
   indexReadyPromise = null;
 }
 
@@ -237,18 +255,26 @@ function loadIntoMemory(chunks: ChunkShape[]): void {
 
 const STOPWORDS = new Set(["the", "a", "an", "of", "and", "or", "to", "in", "on", "with", "without", "for", "from", "by", "at", "as", "is", "are", "due", "other", "specified", "type", "use", "not", "elsewhere", "classified"]);
 
-/** Very light stem — consistent for both docs and queries. */
+/**
+ * Stemming is delegated to the shared query-expand module so the index and
+ * the query are stemmed identically (a mismatch silently zeroes out matches,
+ * e.g. "diabetes" -> "diabete" vs "diabet").
+ */
 function liteStem(tok: string): string {
-  if (tok.length > 4 && tok.endsWith("ies")) return tok.slice(0, -3) + "y";
-  if (tok.length > 3 && tok.endsWith("es") && !tok.endsWith("ses")) return tok.slice(0, -2);
-  if (tok.length > 3 && tok.endsWith("s") && !tok.endsWith("ss")) return tok.slice(0, -1);
-  return tok;
+  return stem(tok);
 }
 
 function tokenize(text: string): string[] {
   const out: string[] = [];
   for (const raw of text.toLowerCase().split(/[^a-z0-9.]+/)) {
-    if (!raw || raw.length < 2 || raw === ".") continue;
+    if (!raw || raw === ".") continue;
+    // Keep numeric tokens even when single-character ("type 2", "stage 3",
+    // "grade 1") — dropping them collapses "type 2 diabetes" into "diabetes".
+    if (/^\d+$/.test(raw)) {
+      out.push(raw);
+      continue;
+    }
+    if (raw.length < 2) continue;
     if (/\d/.test(raw)) {
       // code-like token: index both with and without the dot
       out.push(raw);
@@ -266,10 +292,12 @@ function buildIndexSync(): void {
   if (!codeMap) return;
   const idx = new Map<string, number[]>();
   const docs = codeList;
+  const lens: number[] = new Array(docs.length);
   for (let i = 0; i < docs.length; i++) {
     const code = docs[i];
     const desc = codeMap.get(code)?.desc ?? "";
     const toks = tokenize(`${code} ${desc}`);
+    lens[i] = toks.length;
     for (const tok of new Set(toks)) {
       const arr = idx.get(tok);
       if (arr) arr.push(i);
@@ -277,6 +305,8 @@ function buildIndexSync(): void {
     }
   }
   searchIndex = idx;
+  docLens = lens;
+  avgDocLen = lens.reduce((n, l) => n + l, 0) / Math.max(1, lens.length);
 }
 
 /**
@@ -291,11 +321,13 @@ export function ensureSearchIndex(): Promise<void> {
   indexReadyPromise = new Promise<void>((resolve) => {
     let i = 0;
     const idx = new Map<string, number[]>();
+    const lens: number[] = new Array(codeList.length);
     function slice() {
       const end = Math.min(i + INDEX_SLICE, codeList.length);
       for (; i < end; i++) {
         const code = codeList[i];
         const toks = tokenize(`${code} ${codeMap!.get(code)?.desc ?? ""}`);
+        lens[i] = toks.length;
         for (const tok of new Set(toks)) {
           const arr = idx.get(tok);
           if (arr) arr.push(i);
@@ -306,6 +338,8 @@ export function ensureSearchIndex(): Promise<void> {
         setTimeout(slice, 0);
       } else {
         searchIndex = idx;
+        docLens = lens;
+        avgDocLen = lens.reduce((n, l) => n + l, 0) / Math.max(1, lens.length);
         indexBuilding = false;
         resolve();
       }
@@ -636,6 +670,26 @@ export function fullDbCodeCount(): number {
 }
 
 /**
+ * Test-only hook: populate the in-memory database from an explicit list of
+ * [code, description] records and build the search index synchronously, so the
+ * ranking logic can be exercised headlessly (regression sprint 12) without a
+ * browser / IndexedDB. Never called by application code.
+ */
+export function __loadRecordsForTest(records: [string, string][]): void {
+  const map = new Map<string, CodeRecord>();
+  for (const [code, desc] of records) {
+    map.set(normCode(code), { desc, billable: true });
+  }
+  codeMap = map;
+  codeList = [...map.keys()].sort();
+  searchIndex = null;
+  indexReadyPromise = null;
+  buildIndexSync();
+  status.state = "ready";
+  status.total = records.length;
+}
+
+/**
  * Full-database search across all ~74k codes using the inverted index.
  * Returns ranked results (exact/prefix code matches boosted).
  */
@@ -671,56 +725,131 @@ export async function searchFullDb(query: string, limit = 10): Promise<FullDbSea
     }
   }
 
-  const qTokens = tokenize(q);
+  const rawTokens = tokenize(q);
+  if (!rawTokens.length) return [];
   const lastTokRaw = q.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).pop() ?? "";
   const lastTokStem = liteStem(lastTokRaw);
 
-  for (const tok of qTokens) {
-    const isLast = tok === lastTokStem;
-    const exact = idx.get(tok);
-    const contribution = (arr: number[] | undefined, weight: number) => {
-      if (!arr) return;
-      // Cap huge postings to keep queries fast; common words still rank via count.
-      const step = arr.length > 8000 ? Math.ceil(arr.length / 8000) : 1;
-      for (let i = 0; i < arr.length; i += step) {
-        results.set(arr[i], (results.get(arr[i]) ?? 0) + weight);
-      }
-    };
-    contribution(exact, 1.0);
-    if (isLast && tok.length >= 3) {
-      // prefix expansion on the last token (typeahead feel)
-      for (const [key, arr] of idx) {
-        if (key.startsWith(tok) && key !== tok) contribution(arr, 0.45);
+  const N = codeList.length;
+
+  // Score accumulates per-doc BM25 weight. Postings index token -> doc indices
+  // (tf is always 1 because tokens are de-duplicated per document).
+  const contribution = (arr: number[] | undefined, weight: number) => {
+    if (!arr) return;
+    // Cap huge postings to keep queries fast; IDF already down-weights common
+    // tokens, and sampling preserves relative ordering for the rest.
+    const step = arr.length > 8000 ? Math.ceil(arr.length / 8000) : 1;
+    for (let i = 0; i < arr.length; i += step) {
+      results.set(arr[i], (results.get(arr[i]) ?? 0) + weight);
+    }
+  };
+  const idfOf = (arr: number[]) => Math.log(1 + (N - arr.length + 0.5) / (arr.length + 0.5));
+
+  /**
+   * Score a single query token. `weight` scales the BM25 contribution so the
+   * user's literal tokens dominate and synonym expansions only add recall.
+   * Without this, expansion noise wins: "htn" -> "blood pressure" outranked
+   * essential hypertension (I10) with an elevated-BP-reading code (R03.0).
+   */
+  const scoreToken = (tok: string, weight: number) => {
+    const arr = idx.get(tok);
+    if (!arr) return;
+    contribution(arr, idfOf(arr) * weight);
+    if (tok === lastTokStem && tok.length >= 3) {
+      // Prefix expansion on the last token (typeahead feel). Lower weight
+      // keeps these eligible but never dominant over exact matches.
+      for (const [key, arr2] of idx) {
+        if (key.startsWith(tok) && key !== tok) contribution(arr2, idfOf(arr2) * weight * 0.45);
       }
     }
+  };
+
+  // Original typed tokens get full weight; synonym-expanded tokens get 0.55.
+  // Dedupe so an expansion that equals an original isn't double-counted.
+  const originals = new Set(rawTokens);
+  for (const tok of originals) scoreToken(tok, 1);
+  for (const raw of rawTokens) {
+    for (const exp of expandToken(raw)) {
+      if (!originals.has(exp)) scoreToken(exp, 0.55);
+    }
   }
+
+  // Phrase + adjacent-bigram bonuses. Applied during ranking against the
+  // description text of the candidate set only (cheap, candidate-bounded).
+  const phrase = rawTokens.length > 1 ? rawTokens.join(" ") : "";
+  const bigrams: string[] = [];
+  for (let i = 0; i < rawTokens.length - 1; i++) bigrams.push(`${rawTokens[i]} ${rawTokens[i + 1]}`);
 
   // Apply code-prefix boosts
   for (const i of directPrefixes) {
     results.set(i, (results.get(i) ?? 0) + 1.5);
   }
 
-  // Rank
+  // Rank with BM25 length normalization + phrase/bigram bonus.
   const out: FullDbSearchResult[] = [];
   const entries = Array.from(results.entries());
-  entries.sort((a, b) => b[1] - a[1]);
+  const ranked: { i: number; score: number }[] = [];
+  for (const [docIdx, base] of entries) {
+    const len = docLens[docIdx] ?? avgDocLen;
+    // Postings carry tf=1; apply the BM25 length norm so long descriptions
+    // don't automatically accumulate more matches than specific short ones.
+    const norm = 1 - B + B * (len / avgDocLen);
+    let score = base / norm;
+    const code = codeList[docIdx];
+    const desc = (codeMap!.get(code)?.desc ?? "").toLowerCase();
+    if (phrase) {
+      if (desc.includes(phrase)) {
+        score += PHRASE_BONUS;
+        // The query being the HEAD of the description is a stronger signal
+        // than a coincidental interior mention.
+        if (desc.startsWith(phrase)) score += 1.2;
+      }
+      // Negation guard: a term living inside a "without/no/not" clause is
+      // usually an exclusion ("without diagnosis of hypertension"), not the
+      // condition itself — penalize so it can't outrank the true concept.
+      if (inNegatedClause(desc, phrase)) score -= PHRASE_BONUS;
+    }
+    for (const bg of bigrams) {
+      if (desc.includes(bg)) { score += BIGRAM_BONUS; break; }
+    }
+    // Small specificity bonus: shorter descriptions are usually broader/cleaner
+    // targets, but keep it minor so it never overrides content relevance.
+    score += Math.max(0, 0.25 - desc.length / 600);
+    ranked.push({ i: docIdx, score });
+  }
+  ranked.sort((a, b) => b.score - a.score);
 
-  for (const [docIdx, score] of entries) {
+  for (const { i: docIdx, score } of ranked) {
     if (out.length >= limit) break;
     const code = codeList[docIdx];
     const desc = codeMap!.get(code)?.desc ?? "";
-    // Small specificity bonus: shorter descriptions are usually broader/cleaner targets
-    const specificity = Math.max(0, 0.3 - desc.length / 400);
     const ch = chapterOfCode(code);
     out.push({
       code,
       description: desc,
-      score: Number((score + specificity).toFixed(3)),
+      score: Number(score.toFixed(3)),
       chapter: ch ? `${ch.label_en}` : null,
       chapterId: ch?.id ?? null,
     });
   }
   return out;
+}
+
+/**
+ * True when `needle` appears in `desc` inside a negation clause — i.e. within a
+ * short window after a negation cue ("without", "no", "not", "w/o"). ICD short
+ * titles often embed exclusions ("...without diagnosis of hypertension"), and a
+ * bare substring match on those would wrongly promote the exclusion target.
+ */
+const NEG_CUES = ["without", "w/o", "no ", "not ", "non-", "absent"];
+function inNegatedClause(desc: string, needle: string): boolean {
+  let idx = desc.indexOf(needle);
+  while (idx >= 0) {
+    const win = desc.slice(Math.max(0, idx - 26), idx);
+    if (NEG_CUES.some((cue) => win.includes(cue))) return true;
+    idx = desc.indexOf(needle, idx + 1);
+  }
+  return false;
 }
 
 function lowerBound(sorted: string[], target: string): number {
